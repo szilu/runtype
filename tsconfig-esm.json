@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"module": "ES6",
+		"moduleResolution": "node",
+		"outDir": "esm",
+
+		"target": "es6",
+		"esModuleInterop": true,
+		"declaration": true,
+		"jsx": "react",
+		"strict": true,
+		"baseUrl": "."
+	},
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "**/*.local.ts", "**/*.spec.ts"]
+}

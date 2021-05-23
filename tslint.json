@@ -1,0 +1,9 @@
+{
+  "extends": "tslint-config-standard",
+  "rules": {
+    "space-before-function-paren": false,
+    "ter-indent": [true, "tab"],
+    "deprecation": true,
+    "variable-name": false
+  }
+}
