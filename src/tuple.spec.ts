@@ -12,7 +12,10 @@ declare global {
 describe('test tuple type', () => {
 	const tTuple = t.tuple(t.number, t.string)
 	type Tuple = t.TypeOf<typeof tTuple>
+
+	// These are compile time tests for the TS type inference :)
 	const tuple1: Tuple = [42, 'x']
+
 	// Uncomment these to test TS type inference
 	//const tuple2: Tuple = [42, 42]
 	//const tuple3: Tuple = [42]

@@ -153,6 +153,7 @@ describe('test basic types', () => {
 
 	describe('test literal type', () => {
 		const tLiteral = t.literal(true, 1, 2, 'a', 'b')
+		type Literal = t.TypeOf<typeof tLiteral>
 
 		it('should accept true', () => {
 			expect(tLiteral.decode(true)).toEqual(t.ok(true))

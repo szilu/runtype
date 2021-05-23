@@ -30,7 +30,10 @@ export class StructDecoder<S> extends Decoder<
 		return errors
 	}
 
-	decode(u: unknown) {
+	decode(u: unknown): Result<
+		{ [K in RequiredKeys<S>]: S[K] }
+		& { [K in OptionalKeys<S>]?: S[K] }
+	> {
 		let errors: string[] = []
 
 		if (typeof u !== 'object' || u === null) {

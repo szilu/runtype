@@ -20,10 +20,13 @@ describe('test struct type', () => {
 	type PartialStruct = t.PartialTypeOf<typeof tStruct>
 	type PatchStruct = t.PatchTypeOf<typeof tStruct>
 
-	const struct: Struct = { s: 'string', n: 42, b: true }
+	// These are compile time tests for the TS type inference :)
+	const struct1: Struct = { s: 'string', n: 42, b: true }
+	const struct2: Struct = { s: 'string', n: 42 }
 	const partialStruct: PartialStruct = { s: 'string', n: 42, b: undefined }
 	const patchStruct1: PatchStruct = { s: 'string', n: 42, b: null }
 	const patchStruct2: PatchStruct = { s: 'string' }
+
 	// Uncomment these to test TS type inference
 	// const patchStruct3: PatchStruct = { s: 'string', n:null }
 

@@ -10,43 +10,17 @@ declare global {
 }
 
 describe('test union type', () => {
-	const tLiteral = t.literal(1, 'a')
-	type Literal = t.TypeOf<typeof tLiteral>
-
 	const tStruct = t.struct({ n: t.number, s: t.optional(t.string) })
 	type Struct = t.TypeOf<typeof tStruct>
 	type PartialStruct = t.PartialTypeOf<typeof tStruct>
 	type PatchStruct = t.PatchTypeOf<typeof tStruct>
-	const struct1: Struct = { n: 42 }
-	tStruct.decode
-	tStruct.decodePartial
-	tStruct.decodePatch
-
-	const tSchema = t.struct({ field: t.number, subStruct: tStruct })
-	type Schema = t.TypeOf<typeof tSchema>
-	type PartialSchema = t.PartialTypeOf<typeof tSchema>
-	type PatchSchema = t.PatchTypeOf<typeof tSchema>
-
-	tSchema.decode
-	tSchema.decodePartial
-	tSchema.decodePatch
-
-	const tOptional = t.optional(t.number)
-	type Optional = t.TypeOf<typeof tOptional>
-	const o1: Optional = 42
-	const o2: Optional = undefined
-
-	tOptional.decode
-
-	// Uncomment these to test TS type inference
-	//const o3: Optional = 'zizi'
-	//const o4: Optional = null
 
 	const tUnion = t.union(t.number, t.string, tStruct)
 	type Union = t.TypeOf<typeof tUnion>
 
-	const union: Union = 42
-	//const union2: Union = { n: 42 }
+	// These are compile time tests for the TS type inference :)
+	const union1: Union = 42
+	const union2: Union = { n: 42 }
 
 	// Uncomment these to test TS type inference
 	//const union2: Union = true
