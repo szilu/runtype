@@ -66,7 +66,10 @@ export class StructDecoder<S> extends Decoder<
 		return ok(u as { [K in keyof S]: S[K] })
 	}
 
-	decodePatch(u: unknown): Result<{ [K in keyof S]?: S[K] | null | undefined }> {
+	decodePatch(u: unknown): Result<
+		{ [K in RequiredKeys<S>]?: S[K] | undefined }
+		& { [K in OptionalKeys<S>]?: S[K] | null | undefined }
+	> {
 		let errors: string[] = []
 
 		if (typeof u !== 'object' || u === null) {
@@ -75,22 +78,27 @@ export class StructDecoder<S> extends Decoder<
 		const struct: Record<keyof S, unknown> = u as any
 		// decode fields
 		for (const p in this.props) {
-			const res = (struct[p] as any) === undefined ? ok(undefined)
-				: (struct[p] as any) === null ? ok(null)
-				: this.props[p].decode(struct[p])
+			let res
+			if (isOk(this.props[p].decode(undefined))) {
+				// optional field => accept undefined and null
+				res = (struct[p] as any) === undefined ? ok(undefined)
+					: (struct[p] as any) === null ? ok(null)
+					: this.props[p].decode(struct[p])
+			} else {
+				// required field => accept only undefined
+				res = (struct[p] as any) === undefined ? ok(undefined)
+					: this.props[p].decode(struct[p])
+			}
 			if (isErr(res)) errors.push(`${p}: ${res.err}`)
 		}
 		// check extra fields
 		errors.splice(-1, 0, ...this.checkExtraFields(struct))
 		if (errors.length) return err(errors.join('\n'))
-		return ok(u as { [K in keyof S]: S[K] })
+		return ok(u as { [K in RequiredKeys<S>]?: S[K] | undefined } & { [K in OptionalKeys<S>]?: S[K] | null | undefined })
 	}
 }
 
-export function struct<S>(props: { [K in keyof S]: Decoder<S[K]> }): StructDecoder<
-	{ [K in RequiredKeys<S>]: S[K] }
-	& { [K in OptionalKeys<S>]?: S[K] }
-> {
+export function struct<S>(props: { [K in keyof S]: Decoder<S[K]> }): StructDecoder<S> {
 	return new StructDecoder(props)
 }
 

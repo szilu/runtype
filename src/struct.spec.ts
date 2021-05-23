@@ -14,7 +14,7 @@ describe('test struct type', () => {
 	const tStruct = t.struct({
 		s: t.string,
 		n: t.number,
-		b: t.boolean
+		b: t.optional(t.boolean)
 	})
 	type Struct = t.TypeOf<typeof tStruct>
 	type PartialStruct = t.PartialTypeOf<typeof tStruct>
@@ -22,7 +22,10 @@ describe('test struct type', () => {
 
 	const struct: Struct = { s: 'string', n: 42, b: true }
 	const partialStruct: PartialStruct = { s: 'string', n: 42, b: undefined }
-	const patchStruct: PatchStruct = { s: 'string', n: 42, b: null }
+	const patchStruct1: PatchStruct = { s: 'string', n: 42, b: null }
+	const patchStruct2: PatchStruct = { s: 'string' }
+	// Uncomment these to test TS type inference
+	// const patchStruct3: PatchStruct = { s: 'string', n:null }
 
 	describe('test struct decode', () => {
 		it('should accept struct', () => {
@@ -46,7 +49,7 @@ describe('test struct type', () => {
 		})
 
 		it('should reject missing field', () => {
-			expect(tStruct.decode({ s: 'string', n: 42 })).toBeErr()
+			expect(tStruct.decode({ s: 'string', b: true })).toBeErr()
 		})
 
 		it('should reject extra field', () => {
@@ -91,12 +94,16 @@ describe('test struct type', () => {
 			expect(tStruct.decodePatch({ s: 'string', n: '42', b: true })).toBeErr()
 		})
 
-		it('should accept missing field', () => {
-			expect(tStruct.decodePatch({ s: 'string', n: 42 })).toEqual(t.ok({ s: 'string', n: 42 }))
+		it('should accept missing fields', () => {
+			expect(tStruct.decodePatch({ s: 'string' })).toEqual(t.ok({ s: 'string' }))
 		})
 
 		it('should accept null field', () => {
 			expect(tStruct.decodePatch({ s: 'string', n: 42, b: null })).toEqual(t.ok({ s: 'string', n: 42, b: null }))
+		})
+
+		it('should reject null in required field', () => {
+			expect(tStruct.decodePatch({ s: 'string', n: null, b: true })).toBeErr()
 		})
 
 		it('should reject extra field', () => {
