@@ -68,6 +68,7 @@ class IntegerDecoder extends Decoder<number> {
 	}
 }
 export const integer = new IntegerDecoder()
+export const id = new IntegerDecoder()
 
 // Boolean //
 /////////////
@@ -98,6 +99,19 @@ class DateDecoder extends Decoder<Date> {
 	}
 }
 export const date = new DateDecoder()
+
+// Any //
+/////////
+class AnyDecoder extends Decoder<any> {
+	print() {
+		return 'any'
+	}
+
+	decode(u: unknown): any {
+		return ok(u)
+	}
+}
+export const any = new AnyDecoder()
 
 // Literal //
 /////////////

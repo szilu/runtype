@@ -105,4 +105,6 @@ export function struct<S>(props: { [K in keyof S]: Decoder<S[K]> }): StructDecod
 	return new StructDecoder(props)
 }
 
+export const type = struct
+
 // vim: ts=4
