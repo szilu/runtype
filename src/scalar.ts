@@ -107,8 +107,8 @@ class AnyDecoder extends Decoder<any> {
 		return 'any'
 	}
 
-	decode(u: unknown): any {
-		return ok(u)
+	decode(u: unknown) {
+		return ok(u as any)
 	}
 }
 export const any = new AnyDecoder()
