@@ -2,20 +2,6 @@ import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys, Narrow } from
 import { Type, DecoderOpts } from './type'
 import * as t from './index'
 
-/*
-	Schema types:
-		Strict without genKey (used for new record (POST))
-			- genKey is missing
-			- every prop strict checked
-		Partial without genKey (used by forms during editing (EDIT POST))
-			- keys: T | undefined
-			- required fields: T | undefined
-			- optional fields: T | undefined
-		Keys
-			- keys: T
-			- required fields: missing
-			- optional fields: missing
- */
 
 export interface FieldType<T> {
 	ts: t.Type<T>
@@ -43,13 +29,8 @@ export function schema<T extends { [K: string]: unknown }, KEYS extends keyof T,
 	return { genKey, keys, props }
 }
 
-const s = schema({
-		k: { type: { ts: t.number } },
-		v: { type: { ts: t.string } }
-	},
-	['k'], 'k'
-)
 
+////////////////////////
 // Strict Schema Type //
 ////////////////////////
 // - every prop strict checked
@@ -117,6 +98,7 @@ export function schemaStrict<T extends { [K: string]: unknown }, KEYS extends ke
 	return new SchemaStrictType(schema)
 }
 
+/////////////////////////
 // Partial Schema Type //
 /////////////////////////
 // - keys:			value | undefined
@@ -180,6 +162,7 @@ export function schemaPartial<T extends { [K: string]: unknown }, KEYS extends k
 	return new SchemaPartialType(schema)
 }
 
+///////////////////////
 // Patch Schema Type //
 ///////////////////////
 // - keys:			required
@@ -259,6 +242,7 @@ export function schemaPatch<T extends { [K: string]: unknown }, KEYS extends key
 	return new SchemaPatchType(schema)
 }
 
+//////////////////////
 // Post Schema Type //
 //////////////////////
 // - genKey is missing
@@ -329,7 +313,8 @@ export function schemaPost<T extends { [K: string]: unknown }, KEYS extends keyo
 	return new SchemaPostType(schema)
 }
 
-// Edit Post (partial wothout genKey) //
+////////////////////////////////////////
+// Edit Post (partial without genKey) //
 ////////////////////////////////////////
 // - genKey is missing
 // - required fields: value | undefined
@@ -396,6 +381,7 @@ export function schemaEditPost<T extends { [K: string]: unknown }, KEYS extends 
 	return new SchemaEditPostType(schema)
 }
 
+//////////
 // Keys //
 //////////
 // - keys: required
