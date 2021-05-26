@@ -77,7 +77,7 @@ describe('test struct type', () => {
 		})
 
 		it('should reject invalid field value', () => {
-			expect(t.decodePartial(tStruct, { s: 'string', n: '42', b: true })).toBeErr()
+			expect(t.decodePartial(tStruct, { s: 'string', n: 'string', b: true })).toBeErr()
 		})
 
 		it('should accept missing field', () => {

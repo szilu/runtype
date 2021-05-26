@@ -2,7 +2,7 @@
 export * from './utils'
 
 // Base
-export * from './decoder'
+export * from './type'
 
 // Decoders
 export * from './scalar'
@@ -13,5 +13,10 @@ export * from './array'
 export * from './struct'
 export * from './tuple'
 export * from './union'
+
+export * from './schema'
+
+// Validator
+export * from './validator'
 
 // vim: ts=4

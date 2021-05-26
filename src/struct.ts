@@ -1,28 +1,28 @@
-import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
+import { Result, ok, err, isOk, RequiredKeys, OptionalKeys } from './utils'
 import { Type, DecoderOpts } from './type'
 
 // Struct //
 ////////////
-export class StructType<S> extends Type<
-	{ [K in RequiredKeys<S>]: S[K] }
-	& { [K in OptionalKeys<S>]?: S[K] }
+export class StructType<T extends { [K: string]: unknown }> extends Type<
+	{ [K in RequiredKeys<T>]: T[K] }
+	& { [K in OptionalKeys<T>]?: T[K] }
 > {
-	props: { [K in keyof S]: Type<S[K]> }
+	props: { [K in keyof T]: Type<T[K]> }
 
-	constructor(props: { [K in keyof S]: Type<S[K]> }) {
+	constructor(props: { [K in keyof T]: Type<T[K]> }) {
 		super()
 		this.props = props
 	}
 
 	print() {
 		return '{ '
-			+ (Object.keys(this.props) as (keyof S)[]).map(name =>
+			+ (Object.keys(this.props) as (keyof T)[]).map(name =>
 				`${name}${isOk(this.props[name].decode(undefined, {})) ? '?' : ''}: ${this.props[name].print()}`
 			).join(', ')
 			+ ' }'
 	}
 
-	checkExtraFields(struct: Record<keyof S, unknown>, opts: DecoderOpts) {
+	checkExtraFields(struct: Record<keyof T, unknown>, opts: DecoderOpts) {
 		let errors: string[] = []
 
 		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
@@ -33,15 +33,15 @@ export class StructType<S> extends Type<
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<
-		{ [K in RequiredKeys<S>]: S[K] }
-		& { [K in OptionalKeys<S>]?: S[K] }
+		{ [K in RequiredKeys<T>]: T[K] }
+		& { [K in OptionalKeys<T>]?: T[K] }
 	> {
 		if (typeof u !== 'object' || u === null) {
 			return err('expected object')
 		}
 
-		const ret: { [K in keyof S]?: S[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
-		const struct: Record<keyof S, unknown> = u as any
+		const ret: { [K in keyof T]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
+		const struct: Record<keyof T, unknown> = u as any
 		let errors: string[] = []
 
 		// decode fields
@@ -56,16 +56,16 @@ export class StructType<S> extends Type<
 		// check extra fields
 		errors.splice(-1, 0, ...this.checkExtraFields(struct, opts))
 		if (errors.length) return err(errors.join('\n'))
-		return ok(ret as { [K in keyof S]: S[K] })
+		return ok(ret as { [K in keyof T]: T[K] })
 	}
 
-	decodePartial(u: unknown, opts: DecoderOpts): Result<{ [K in keyof S]?: S[K] | undefined }> {
+	decodePartial(u: unknown, opts: DecoderOpts): Result<{ [K in keyof T]?: T[K] | undefined }> {
 		if (typeof u !== 'object' || u === null) {
 			return err('expected object')
 		}
 
-		const ret: { [K in keyof S]?: S[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
-		const struct: Record<keyof S, unknown> = u as any
+		const ret: { [K in keyof T]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
+		const struct: Record<keyof T, unknown> = u as any
 		let errors: string[] = []
 
 		// decode fields
@@ -80,19 +80,19 @@ export class StructType<S> extends Type<
 		// check extra fields
 		errors.splice(-1, 0, ...this.checkExtraFields(struct, opts))
 		if (errors.length) return err(errors.join('\n'))
-		return ok(ret as { [K in keyof S]?: S[K] })
+		return ok(ret as { [K in keyof T]?: T[K] })
 	}
 
 	decodePatch(u: unknown, opts: DecoderOpts): Result<
-		{ [K in RequiredKeys<S>]?: S[K] | undefined }
-		& { [K in OptionalKeys<S>]?: S[K] | null | undefined }
+		{ [K in RequiredKeys<T>]?: T[K] | undefined }
+		& { [K in OptionalKeys<T>]?: T[K] | null | undefined }
 	> {
 		if (typeof u !== 'object' || u === null) {
 			return err('expected object')
 		}
 
-		const ret: { [K in keyof S]?: S[K] | null } = opts.unknownFields === 'discard' ? { ...u } : {}
-		const struct: Record<keyof S, unknown> = u as any
+		const ret: { [K in keyof T]?: T[K] | null } = opts.unknownFields === 'discard' ? { ...u } : {}
+		const struct: Record<keyof T, unknown> = u as any
 		let errors: string[] = []
 
 		// decode fields
@@ -117,11 +117,11 @@ export class StructType<S> extends Type<
 		// check extra fields
 		errors.splice(-1, 0, ...this.checkExtraFields(struct, opts))
 		if (errors.length) return err(errors.join('\n'))
-		return ok(ret as { [K in RequiredKeys<S>]?: S[K] | undefined } & { [K in OptionalKeys<S>]?: S[K] | null | undefined })
+		return ok(ret as { [K in RequiredKeys<T>]?: T[K] | undefined } & { [K in OptionalKeys<T>]?: T[K] | null | undefined })
 	}
 }
 
-export function struct<S>(props: { [K in keyof S]: Type<S[K]> }): StructType<S> {
+export function struct<T extends { [K: string]: unknown }>(props: { [K in keyof T]: Type<T[K]> }): StructType<T> {
 	return new StructType(props)
 }
 
@@ -131,13 +131,13 @@ export const type = struct
 export type PartialTypeOf<D> = D extends { decodePartial: (u: unknown, opts: DecoderOpts) => Result<infer T> } ? T : never
 export type PatchTypeOf<D> = D extends { decodePatch: (u: unknown, opts: DecoderOpts) => Result<infer T> } ? T : never
 
-export function decodePartial<S>(type: StructType<S>, value: unknown, opts: DecoderOpts = {}): Result<{ [K in keyof S]?: S[K] | undefined }> {
+export function decodePartial<T extends { [K: string]: unknown }>(type: StructType<T>, value: unknown, opts: DecoderOpts = {}): Result<{ [K in keyof T]?: T[K] | undefined }> {
 	return type.decodePartial(value, opts)
 }
 
-export function decodePatch<S>(type: StructType<S>, value: unknown, opts: DecoderOpts = {}): Result<
-	{ [K in RequiredKeys<S>]?: S[K] | undefined }
-	& { [K in OptionalKeys<S>]?: S[K] | null | undefined }
+export function decodePatch<T extends { [K: string]: unknown }>(type: StructType<T>, value: unknown, opts: DecoderOpts = {}): Result<
+	{ [K in RequiredKeys<T>]?: T[K] | undefined }
+	& { [K in OptionalKeys<T>]?: T[K] | null | undefined }
 > {
 	return type.decodePatch(value, opts)
 }
