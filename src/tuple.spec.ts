@@ -22,19 +22,19 @@ describe('test tuple type', () => {
 	//const tuple4: Tuple = [42, 'x', 34]
 
 	it('should accept tuple', () => {
-		expect(tTuple.decode([1, 'x'])).toEqual(t.ok([1, 'x']))
+		expect(t.decode(tTuple, [1, 'x'])).toEqual(t.ok([1, 'x']))
 	})
 
 	it('should reject non array', () => {
-		expect(tTuple.decode({})).toBeErr()
+		expect(t.decode(tTuple, {})).toBeErr()
 	})
 
 	it('should reject invalid field value', () => {
-		expect(tTuple.decode([1, 2])).toBeErr()
+		expect(t.decode(tTuple, [1, 2])).toBeErr()
 	})
 
 	it('should reject on missing field', () => {
-		expect(tTuple.decode([1])).toBeErr()
+		expect(t.decode(tTuple, [1])).toBeErr()
 	})
 
 	it('should print tuple type', () => {

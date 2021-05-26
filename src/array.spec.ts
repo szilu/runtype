@@ -14,15 +14,15 @@ describe('test array type', () => {
 	type Array = t.TypeOf<typeof tArray>
 
 	it('should accept array', () => {
-		expect(tArray.decode([1, 2, 42])).toEqual(t.ok([1, 2, 42]))
+		expect(t.decode(tArray, [1, 2, 42])).toEqual(t.ok([1, 2, 42]))
 	})
 
 	it('should reject non array', () => {
-		expect(tArray.decode({})).toBeErr()
+		expect(t.decode(tArray, {})).toBeErr()
 	})
 
 	it('should reject invalid field value', () => {
-		expect(tArray.decode([1, 2, 'x'])).toBeErr()
+		expect(t.decode(tArray, [1, 2, 'x'])).toBeErr()
 	})
 
 	it('should print array type', () => {

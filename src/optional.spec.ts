@@ -22,15 +22,15 @@ describe('test optional type', () => {
 	//const o4: Optional = null
 
 	it('should accept 42', () => {
-		expect(tOptional.decode(42)).toEqual(t.ok(42))
+		expect(t.decode(tOptional, 42)).toEqual(t.ok(42))
 	})
 
 	it('should accept undefined', () => {
-		expect(tOptional.decode(undefined)).toEqual(t.ok(undefined))
+		expect(t.decode(tOptional, undefined)).toEqual(t.ok(undefined))
 	})
 
 	it('should reject "z"', () => {
-		expect(tOptional.decode('z')).toBeErr()
+		expect(t.decode(tOptional, 'z')).toBeErr()
 	})
 
 	it('should print type', () => {

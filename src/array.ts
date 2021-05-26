@@ -1,12 +1,12 @@
-import { Result, ok, err, isErr } from './utils'
-import { Decoder } from './decoder'
+import { Result, ok, err, isOk } from './utils'
+import { Type, DecoderOpts } from './type'
 
 // Array //
 ///////////
-class ArrayDecoder<T> extends Decoder<T[]> {
-	memberType: Decoder<T>
+class ArrayType<T> extends Type<T[]> {
+	memberType: Type<T>
 
-	constructor(memberType: Decoder<T>) {
+	constructor(memberType: Type<T>) {
 		super()
 		this.memberType = memberType
 	}
@@ -16,21 +16,27 @@ class ArrayDecoder<T> extends Decoder<T[]> {
 		return !/[|&()]/.test(member) ? member + '[]' : '(' + member + ')[]'
 	}
 
-	decode(u: unknown): Result<T[]> {
+	decode(u: unknown, opts: DecoderOpts): Result<T[]> {
+		const ret: T[] = []
 		let errors: string[] = []
+
 		if (!Array.isArray(u)) return err('expected Array')
 
 		for (let i = 0; i < u.length; i++) {
-			const res = this.memberType.decode(u[i])
-			if (isErr(res)) errors.push(`${i}: ${res.err}`)
+			const res = this.memberType.decode(u[i], opts)
+			if (isOk(res)) {
+				ret[i] = res.ok
+			} else {
+				errors.push(`${i}: ${res.err}`)
+			}
 		}
 		if (errors.length) return err(errors.join('\n'))
-		return ok(u as T[])
+		return ok(ret)
 	}
 }
 
-export function array<T>(memberType: Decoder<T>): Decoder<T[]> {
-	return new ArrayDecoder(memberType)
+export function array<T>(memberType: Type<T>): Type<T[]> {
+	return new ArrayType(memberType)
 }
 
 // vim: ts=4

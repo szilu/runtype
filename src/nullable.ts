@@ -1,12 +1,12 @@
 import { Result, ok, err, isOk } from './utils'
-import { Decoder } from './decoder'
+import { Type, DecoderOpts } from './type'
 
 // Nullable //
 //////////////
-class NullableDecoder<T> extends Decoder<T | null | undefined> {
-	type: Decoder<T>
+class NullableType<T> extends Type<T | null | undefined> {
+	type: Type<T>
 
-	constructor(type: Decoder<T>) {
+	constructor(type: Type<T>) {
 		super()
 		this.type = type
 	}
@@ -15,15 +15,15 @@ class NullableDecoder<T> extends Decoder<T | null | undefined> {
 		return this.type.print() + ' | null | undefined'
 	}
 
-	decode(u: unknown) {
+	decode(u: unknown, opts: DecoderOpts) {
 		if (u === null || u === undefined) return ok(u)
-		const res = this.type.decode(u)
+		const res = this.type.decode(u, opts)
 		return isOk(res) ? res : err(res.err + ' | null | undefined')
 	}
 }
 
-export function nullable<T>(type: Decoder<T>): NullableDecoder<T> {
-	return new NullableDecoder(type)
+export function nullable<T>(type: Type<T>): NullableType<T> {
+	return new NullableType(type)
 }
 
 // vim: ts=4

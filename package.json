@@ -25,6 +25,13 @@
     "type": "git",
     "url": "https://github.com/szilu/runtype"
   },
+  "keywords": [
+      "runtime",
+      "type",
+      "checking",
+      "validation",
+      "typescript"
+  ],
   "author": "Szilárd Hajba <szilu@symbion.hu>",
   "license": "MIT",
   "devDependencies": {

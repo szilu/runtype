@@ -12,27 +12,27 @@ declare global {
 describe('test basic types', () => {
 	describe('test constant types', () => {
 		it('"undefined" should accept undefined', () => {
-			expect(t.undefinedValue.decode(undefined)).toEqual(t.ok(undefined))
+			expect(t.decode(t.undefinedValue, undefined)).toEqual(t.ok(undefined))
 		})
 
 		it('"undefined" should reject null', () => {
-			expect(t.undefinedValue.decode(null)).toBeErr()
+			expect(t.decode(t.undefinedValue, null)).toBeErr()
 		})
 
 		it('"undefined" should reject 42', () => {
-			expect(t.undefinedValue.decode(42)).toBeErr()
+			expect(t.decode(t.undefinedValue, 42)).toBeErr()
 		})
 
 		it('"null" should accept null', () => {
-			expect(t.nullValue.decode(null)).toEqual(t.ok(null))
+			expect(t.decode(t.nullValue, null)).toEqual(t.ok(null))
 		})
 
 		it('"null" should reject undefined', () => {
-			expect(t.nullValue.decode(undefined)).toBeErr()
+			expect(t.decode(t.nullValue, undefined)).toBeErr()
 		})
 
 		it('"null" should reject 42', () => {
-			expect(t.nullValue.decode(42)).toBeErr()
+			expect(t.decode(t.nullValue, 42)).toBeErr()
 		})
 
 		it('should print type', () => {
@@ -44,17 +44,39 @@ describe('test basic types', () => {
 		})
 	})
 
-	describe('test string type', () => {
-		it('should accept a string', () => {
-			expect(t.string.decode('some string')).toEqual(t.ok('some string'))
+	describe('test any type', () => {
+		it('should accept string', () => {
+			expect(t.decode(t.any, 'some string')).toEqual(t.ok('some string'))
 		})
 
-		it('should reject not string', () => {
-			expect(t.string.decode(42)).toBeErr()
+		it('should accept number', () => {
+			expect(t.decode(t.any, 42)).toEqual(t.ok(42))
+		})
+
+		it('should accept object', () => {
+			expect(t.decode(t.any, {})).toEqual(t.ok({}))
+		})
+
+		it('should print type', () => {
+			expect(t.any.print()).toBe('any')
+		})
+	})
+
+	describe('test string type', () => {
+		it('should accept a string', () => {
+			expect(t.decode(t.string, 'some string')).toEqual(t.ok('some string'))
+		})
+
+		it('should reject number', () => {
+			expect(t.decode(t.string, 42)).toBeErr()
+		})
+
+		it('should coerce number with opt', () => {
+			expect(t.decode(t.string, 42, { coerceAll: true })).toEqual(t.ok('42'))
 		})
 
 		it('should reject undefined', () => {
-			expect(t.string.decode(undefined)).toBeErr()
+			expect(t.decode(t.string, undefined)).toBeErr()
 		})
 
 		it('should print type', () => {
@@ -64,19 +86,27 @@ describe('test basic types', () => {
 
 	describe('test number type', () => {
 		it('should accept a number', () => {
-			expect(t.number.decode(42)).toEqual(t.ok(42))
+			expect(t.decode(t.number, 42)).toEqual(t.ok(42))
 		})
 
-		it('should reject not number', () => {
-			expect(t.number.decode(null)).toBeErr()
+		it('should reject string', () => {
+			expect(t.decode(t.number, '42')).toBeErr()
 		})
 
-		it('should reject NaN', () => {
-			expect(t.number.decode(NaN)).toBeErr()
+		it('should coerce string with opt', () => {
+			expect(t.decode(t.number, '42', { coerceAll: true })).toEqual(t.ok(42))
 		})
 
 		it('should reject undefined', () => {
-			expect(t.number.decode(undefined)).toBeErr()
+			expect(t.decode(t.number, undefined)).toBeErr()
+		})
+
+		it('should reject NaN', () => {
+			expect(t.decode(t.number, NaN)).toBeErr()
+		})
+
+		it('should accept NaN with opt', () => {
+			expect(t.decode(t.number, NaN, { acceptNaN: true })).toEqual(t.ok(NaN))
 		})
 
 		it('should print type', () => {
@@ -86,19 +116,19 @@ describe('test basic types', () => {
 
 	describe('test integer type', () => {
 		it('should accept an integer', () => {
-			expect(t.integer.decode(42)).toEqual(t.ok(42))
+			expect(t.decode(t.integer, 42)).toEqual(t.ok(42))
 		})
 
 		it('should reject 42.3', () => {
-			expect(t.integer.decode(42.3)).toBeErr()
+			expect(t.decode(t.integer, 42.3)).toBeErr()
 		})
 
 		it('should reject NaN', () => {
-			expect(t.integer.decode(NaN)).toBeErr()
+			expect(t.decode(t.integer, NaN)).toBeErr()
 		})
 
 		it('should reject undefined', () => {
-			expect(t.integer.decode(undefined)).toBeErr()
+			expect(t.decode(t.integer, undefined)).toBeErr()
 		})
 
 		it('should print type', () => {
@@ -108,19 +138,27 @@ describe('test basic types', () => {
 
 	describe('test boolean type', () => {
 		it('should accept true', () => {
-			expect(t.boolean.decode(true)).toEqual(t.ok(true))
+			expect(t.decode(t.boolean, true)).toEqual(t.ok(true))
 		})
 
 		it('should accept false', () => {
-			expect(t.boolean.decode(false)).toEqual(t.ok(false))
+			expect(t.decode(t.boolean, false)).toEqual(t.ok(false))
 		})
 
-		it('should reject not boolean', () => {
-			expect(t.boolean.decode(0)).toBeErr()
+		it('should reject number', () => {
+			expect(t.decode(t.boolean, 0)).toBeErr()
+		})
+
+		it('should coerce 0 with opt', () => {
+			expect(t.decode(t.boolean, 0, { coerceAll: true })).toEqual(t.ok(false))
+		})
+
+		it('should coerce number != 0 with opt', () => {
+			expect(t.decode(t.boolean, 42, { coerceAll: true })).toEqual(t.ok(true))
 		})
 
 		it('should reject undefined', () => {
-			expect(t.boolean.decode(undefined)).toBeErr()
+			expect(t.decode(t.boolean, undefined)).toBeErr()
 		})
 
 		it('should print type', () => {
@@ -128,22 +166,38 @@ describe('test basic types', () => {
 		})
 	})
 
-	describe('test date type', () => {
-		it('should accept 0', () => {
-			expect(t.date.decode(0)).toEqual(t.ok(new Date(0)))
-		})
-
+	describe('test Date type', () => {
 		it('should accept Date', () => {
 			const d = new Date()
-			expect(t.date.decode(d)).toEqual(t.ok(d))
+			expect(t.decode(t.date, d)).toEqual(t.ok(d))
 		})
 
-		it('should reject not date', () => {
-			expect(t.date.decode('XX')).toBeErr()
+		it('should reject string', () => {
+			expect(t.decode(t.date, 'XX')).toBeErr()
+		})
+
+		it('should reject number', () => {
+			expect(t.decode(t.date, 0)).toBeErr()
+		})
+
+		it('should reject object', () => {
+			expect(t.decode(t.date, {})).toBeErr()
+		})
+
+		it('should accept number with coercion', () => {
+			expect(t.decode(t.date, 0, { coerceDate: true })).toEqual(t.ok(new Date(0)))
+		})
+
+		it('should accept string with coercion', () => {
+			expect(t.decode(t.date, '2000-01-01', { coerceDate: true })).toEqual(t.ok(new Date('2000-01-01')))
+		})
+
+		it('should reject non date string with coercion', () => {
+			expect(t.decode(t.date, 'XX', { coerceDate: true })).toBeErr()
 		})
 
 		it('should reject undefined', () => {
-			expect(t.date.decode(undefined)).toBeErr()
+			expect(t.decode(t.date, undefined)).toBeErr()
 		})
 
 		it('should print type', () => {
@@ -156,31 +210,31 @@ describe('test basic types', () => {
 		type Literal = t.TypeOf<typeof tLiteral>
 
 		it('should accept true', () => {
-			expect(tLiteral.decode(true)).toEqual(t.ok(true))
+			expect(t.decode(tLiteral, true)).toEqual(t.ok(true))
 		})
 
 		it('should accept 2', () => {
-			expect(tLiteral.decode(2)).toEqual(t.ok(2))
+			expect(t.decode(tLiteral, 2)).toEqual(t.ok(2))
 		})
 
 		it('should accept "a"', () => {
-			expect(tLiteral.decode('a')).toEqual(t.ok('a'))
+			expect(t.decode(tLiteral, 'a')).toEqual(t.ok('a'))
 		})
 
 		it('should reject false', () => {
-			expect(tLiteral.decode(false)).toBeErr()
+			expect(t.decode(tLiteral, false)).toBeErr()
 		})
 
 		it('should reject 3', () => {
-			expect(tLiteral.decode(3)).toBeErr()
+			expect(t.decode(tLiteral, 3)).toBeErr()
 		})
 
 		it('should reject "z"', () => {
-			expect(tLiteral.decode('z')).toBeErr()
+			expect(t.decode(tLiteral, 'z')).toBeErr()
 		})
 
 		it('should reject undefined', () => {
-			expect(tLiteral.decode(undefined)).toBeErr()
+			expect(t.decode(tLiteral, undefined)).toBeErr()
 		})
 
 		it('should print type', () => {

@@ -1,12 +1,12 @@
 import { Result, ok, err, isOk } from './utils'
-import { Decoder } from './decoder'
+import { Type, DecoderOpts } from './type'
 
 // Optional //
 //////////////
-class OptionalDecoder<T> extends Decoder<T | undefined> {
-	type: Decoder<T>
+class OptionalDecoder<T> extends Type<T | undefined> {
+	type: Type<T>
 
-	constructor(type: Decoder<T>) {
+	constructor(type: Type<T>) {
 		super()
 		this.type = type
 	}
@@ -15,14 +15,14 @@ class OptionalDecoder<T> extends Decoder<T | undefined> {
 		return this.type.print() + ' | undefined'
 	}
 
-	decode(u: unknown): Result<T | undefined> {
+	decode(u: unknown, opts: DecoderOpts): Result<T | undefined> {
 		if (u === undefined) return ok(undefined)
-		const res = this.type.decode(u)
+		const res = this.type.decode(u, opts)
 		return isOk(res) ? res : err(res.err + ' | undefined')
 	}
 }
 
-export function optional<T>(type: Decoder<T>): OptionalDecoder<T | undefined> {
+export function optional<T>(type: Type<T>): OptionalDecoder<T | undefined> {
 	return new OptionalDecoder(type)
 }
 

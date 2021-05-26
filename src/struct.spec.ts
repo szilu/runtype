@@ -32,88 +32,95 @@ describe('test struct type', () => {
 
 	describe('test struct decode', () => {
 		it('should accept struct', () => {
-			expect(tStruct.decode({ s: 'string', n: 42, b: true })).toEqual(t.ok({ s: 'string', n: 42, b: true }))
+			expect(t.decode(tStruct, { s: 'string', n: 42, b: true })).toEqual(t.ok({ s: 'string', n: 42, b: true }))
 		})
 
 		it('should reject scalar', () => {
-			expect(tStruct.decode(42)).toBeErr()
+			expect(t.decode(tStruct, 42)).toBeErr()
 		})
 
 		it('should reject null', () => {
-			expect(tStruct.decode(null)).toBeErr()
+			expect(t.decode(tStruct, null)).toBeErr()
 		})
 
 		it('should reject array', () => {
-			expect(tStruct.decode([42])).toBeErr()
+			expect(t.decode(tStruct, [42])).toBeErr()
 		})
 
 		it('should reject invalid field value', () => {
-			expect(tStruct.decode({ s: 'string', n: '42', b: true })).toBeErr()
+			expect(t.decode(tStruct, { s: 'string', n: '42', b: true })).toBeErr()
 		})
 
 		it('should reject missing field', () => {
-			expect(tStruct.decode({ s: 'string', b: true })).toBeErr()
+			expect(t.decode(tStruct, { s: 'string', b: true })).toBeErr()
 		})
 
 		it('should reject extra field', () => {
-			expect(tStruct.decode({ s: 'string', n: 42, b: true, e: 'extra' })).toBeErr()
+			expect(t.decode(tStruct, { s: 'string', n: 42, b: true, e: 'extra' })).toBeErr()
+		})
+
+		it('should accept extra field with opt', () => {
+			expect(t.decode(tStruct, { s: 'string', n: 42, b: true, e: 'extra' }, { unknownFields: 'discard' })).toEqual(t.ok({ s: 'string', n: 42, b: true, e: 'extra' }))
+		})
+
+		it('should drop extra field with opt', () => {
+			expect(t.decode(tStruct, { s: 'string', n: 42, b: true, e: 'extra' }, { unknownFields: 'drop' })).toEqual(t.ok({ s: 'string', n: 42, b: true }))
 		})
 	})
 	describe('test struct partialDecode', () => {
 		it('should accept struct', () => {
-			expect(tStruct.decodePartial({ s: 'string', n: 42, b: true })).toEqual(t.ok({ s: 'string', n: 42, b: true }))
+			expect(t.decodePartial(tStruct, { s: 'string', n: 42, b: true })).toEqual(t.ok({ s: 'string', n: 42, b: true }))
 		})
 
 		it('should reject null', () => {
-			expect(tStruct.decodePartial(null)).toBeErr()
+			expect(t.decodePartial(tStruct, null)).toBeErr()
 		})
 
 		it('should reject invalid field value', () => {
-			expect(tStruct.decodePartial({ s: 'string', n: '42', b: true })).toBeErr()
+			expect(t.decodePartial(tStruct, { s: 'string', n: '42', b: true })).toBeErr()
 		})
 
 		it('should accept missing field', () => {
-			expect(tStruct.decodePartial({ s: 'string', n: 42 })).toEqual(t.ok({ s: 'string', n: 42 }))
+			expect(t.decodePartial(tStruct, { s: 'string', n: 42 })).toEqual(t.ok({ s: 'string', n: 42 }))
 		})
 
 		it('should reject null field', () => {
-			expect(tStruct.decodePartial({ s: 'string', n: 42, b: null })).toBeErr()
+			expect(t.decodePartial(tStruct, { s: 'string', n: 42, b: null })).toBeErr()
 		})
 
 		it('should reject extra field', () => {
-			expect(tStruct.decodePartial({ s: 'string', n: 42, b: true, e: 'extra' })).toBeErr()
+			expect(t.decodePartial(tStruct, { s: 'string', n: 42, b: true, e: 'extra' })).toBeErr()
 		})
 	})
 	describe('test struct patchDecode', () => {
 		it('should accept struct', () => {
-			expect(tStruct.decodePatch({ s: 'string', n: 42, b: true })).toEqual(t.ok({ s: 'string', n: 42, b: true }))
+			expect(t.decodePatch(tStruct, { s: 'string', n: 42, b: true })).toEqual(t.ok({ s: 'string', n: 42, b: true }))
 		})
 
 		it('should reject null', () => {
-			expect(tStruct.decodePatch(null)).toBeErr()
+			expect(t.decodePatch(tStruct, null)).toBeErr()
 		})
 
 		it('should reject invalid field value', () => {
-			expect(tStruct.decodePatch({ s: 'string', n: '42', b: true })).toBeErr()
+			expect(t.decodePatch(tStruct, { s: 'string', n: '42', b: true })).toBeErr()
 		})
 
 		it('should accept missing fields', () => {
-			expect(tStruct.decodePatch({ s: 'string' })).toEqual(t.ok({ s: 'string' }))
+			expect(t.decodePatch(tStruct, { s: 'string' })).toEqual(t.ok({ s: 'string' }))
 		})
 
 		it('should accept null field', () => {
-			expect(tStruct.decodePatch({ s: 'string', n: 42, b: null })).toEqual(t.ok({ s: 'string', n: 42, b: null }))
+			expect(t.decodePatch(tStruct, { s: 'string', n: 42, b: null })).toEqual(t.ok({ s: 'string', n: 42, b: null }))
 		})
 
 		it('should reject null in required field', () => {
-			expect(tStruct.decodePatch({ s: 'string', n: null, b: true })).toBeErr()
+			expect(t.decodePatch(tStruct, { s: 'string', n: null, b: true })).toBeErr()
 		})
 
 		it('should reject extra field', () => {
-			expect(tStruct.decodePatch({ s: 'string', n: 42, b: true, e: 'extra' })).toBeErr()
+			expect(t.decodePatch(tStruct, { s: 'string', n: 42, b: true, e: 'extra' })).toBeErr()
 		})
 	})
 })
-
 
 // vim: ts=4

@@ -1,12 +1,13 @@
-import { Result, ok, err, isErr } from './utils'
-import { Decoder } from './decoder'
+import { Result, ok, err, isOk } from './utils'
+import { Type, DecoderOpts } from './type'
 
 // Tuple //
 ///////////
-class TupleDecoder<A extends ReadonlyArray<unknown>> extends Decoder<{ [K in keyof A]: A[K] }> {
-	memberTypes: { [K in keyof A]: Decoder<A[K]> }
+//class TupleType<A extends ReadonlyArray<unknown>> extends Type<{ [K in keyof A]: A[K] }> {
+class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
+	memberTypes: { [K in keyof A]: Type<A[K]> }
 
-	constructor(memberTypes: { [K in keyof A]: Decoder<A[K]> }) {
+	constructor(memberTypes: { [K in keyof A]: Type<A[K]> }) {
 		super()
 		this.memberTypes = memberTypes
 	}
@@ -15,8 +16,10 @@ class TupleDecoder<A extends ReadonlyArray<unknown>> extends Decoder<{ [K in key
 		return '[' + this.memberTypes.map(member => member.print()).join(', ') + ']'
 	}
 
-	decode(u: unknown) {
+	decode(u: unknown, opts: DecoderOpts) {
+		const ret: { -readonly [K in number]?: A[K] } = []
 		let errors: string[] = []
+
 		if (!Array.isArray(u)) {
 			return err('expected Array')
 		}
@@ -25,17 +28,21 @@ class TupleDecoder<A extends ReadonlyArray<unknown>> extends Decoder<{ [K in key
 		}
 
 		for (let i = 0; i < u.length; i++) {
-			const res = this.memberTypes[i].decode(u[i])
-			if (isErr(res)) errors.push(`${i}: ${res.err}`)
+			const res = this.memberTypes[i].decode(u[i], opts)
+			if (isOk(res)) {
+				ret[i] = res.ok
+			} else {
+				errors.push(`${i}: ${res.err}`)
+			}
 		}
 		if (errors.length) return err(errors.join('\n'))
-		// return ok(u as { [K in keyof A]: A[K] })
-		return ok(u as any)
+		return ok(ret as A)
 	}
 }
 
-export function tuple<A extends ReadonlyArray<unknown>>(...memberTypes: { [K in keyof A]: Decoder<A[K]> }): Decoder<{ [K in keyof A]: A[K] }> {
-	return new TupleDecoder(memberTypes)
+//export function tuple<A extends ReadonlyArray<unknown>>(...memberTypes: { [K in keyof A]: Type<A[K]> }): Type<{ [K in keyof A]: A[K] }> {
+export function tuple<A extends ReadonlyArray<unknown>>(...memberTypes: { [K in keyof A]: Type<A[K]> }): Type<A> {
+	return new TupleType<A>(memberTypes)
 }
 
 // vim: ts=4

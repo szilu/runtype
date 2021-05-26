@@ -28,19 +28,19 @@ describe('test union type', () => {
 	//const union3: Union = { s: 'x' }
 
 	it('should accept number', () => {
-		expect(tUnion.decode(42)).toEqual(t.ok(42))
+		expect(t.decode(tUnion, 42)).toEqual(t.ok(42))
 	})
 
 	it('should accept comforming object', () => {
-		expect(tUnion.decode({ n: 42 })).toEqual(t.ok({ n: 42 }))
+		expect(t.decode(tUnion, { n: 42 })).toEqual(t.ok({ n: 42 }))
 	})
 
 	it('should reject null', () => {
-		expect(tUnion.decode(null)).toBeErr()
+		expect(t.decode(tUnion, null)).toBeErr()
 	})
 
 	it('should reject empty object', () => {
-		expect(tUnion.decode({})).toBeErr()
+		expect(t.decode(tUnion, {})).toBeErr()
 	})
 
 	it('should print type', () => {

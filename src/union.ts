@@ -1,12 +1,12 @@
 import { Result, err, isOk } from './utils'
-import { Decoder } from './decoder'
+import { Type, DecoderOpts } from './type'
 
 // Union //
 ///////////
-class UnionDecoder<T extends ReadonlyArray<unknown>> extends Decoder/*BaseDecoder*/<T[number]> {
-	members: { [K in keyof T]: Decoder<T[K]> }
+class UnionType<T extends ReadonlyArray<unknown>> extends Type/*BaseDecoder*/<T[number]> {
+	members: { [K in keyof T]: Type<T[K]> }
 
-	constructor(members: { [K in keyof T]: Decoder<T[K]> }) {
+	constructor(members: { [K in keyof T]: Type<T[K]> }) {
 		super()
 		this.members = members
 	}
@@ -15,19 +15,21 @@ class UnionDecoder<T extends ReadonlyArray<unknown>> extends Decoder/*BaseDecode
 		return this.members.map(member => member.print()).join(' | ')
 	}
 
-	decode(u: unknown): Result<T[number]> {
+	decode(u: unknown, opts: DecoderOpts): Result<T[number]> {
 		let errors: string[] = []
 
 		for (const m of this.members) {
-			const matched = m.decode(u)
-			if (isOk(matched)) return matched
+			const matched = m.decode(u, opts)
+			if (isOk(matched)) {
+				return matched
+			}
 		}
 		return err(`expected UNION FIXME`)
 	}
 }
 
-export function union<T extends ReadonlyArray<unknown>>(...members: { [K in keyof T]: Decoder<T[K]> }): Decoder<T[number]> {
-	return new UnionDecoder(members)
+export function union<T extends ReadonlyArray<unknown>>(...members: { [K in keyof T]: Type<T[K]> }): Type<T[number]> {
+	return new UnionType(members)
 }
 
 // vim: ts=4
