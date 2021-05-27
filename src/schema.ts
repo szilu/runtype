@@ -1,16 +1,16 @@
 import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys, Narrow } from './utils'
 import { Type, DecoderOpts } from './type'
 import * as t from './index'
-
+import { Validator } from './validator'
 
 export interface FieldType<T> {
 	ts: t.Type<T>
-	valid?: t.Validator<Exclude<T, undefined>> | { compose: () => t.Validator<Exclude<T, undefined>> }
+	valid?: Validator<Exclude<T, undefined>>
 }
 
 interface FieldDesc<T> {
 	type: FieldType<T>
-	valid?: t.Validator<Exclude<T, undefined>> | { compose: () => t.Validator<Exclude<T, undefined>> }
+	valid?: Validator<Exclude<T, undefined>>
 }
 
 export interface Schema<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS> {
@@ -21,14 +21,35 @@ export interface Schema<T extends { [K: string]: unknown }, KEYS extends keyof T
 
 export function schema<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS>(
 	props: { [P in keyof T]: FieldDesc<T[P]> },
-	//keys: Narrow<KEYS>[] = [],
+	// keys: Narrow<KEYS>[] = [],
 	keys: KEYS[] = [],
-	//genKey?: Narrow<GK>
+	// genKey?: Narrow<GK>
 	genKey?: GK
 ): Schema<T, KEYS, GK> {
 	return { genKey, keys, props }
 }
 
+////////////
+// TypeOf //
+////////////
+export type StrictTypeOf<S> = S extends Schema<infer T, infer KEYS, infer GK>
+	? { [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] }
+	: never
+export type PartialTypeOf<S> = S extends Schema<infer T, infer KEYS, infer GK>
+	? { [K in keyof T]?: T[K] | undefined }
+	: never
+export type PatchTypeOf<S> = S extends Schema<infer T, infer KEYS, infer GK>
+	? { [K in RequiredKeys<T>]?: T[K] | undefined } & { [K in OptionalKeys<T>]?: T[K] | null | undefined }
+	: never
+export type PostTypeOf<S> = S extends Schema<infer T, infer KEYS, infer GK>
+	? { [K in Exclude<RequiredKeys<T>, GK>]: T[K] } & { [K in Exclude<OptionalKeys<T>, GK>]?: T[K] }
+	: never
+export type PostPartialTypeOf<S> = S extends Schema<infer T, infer KEYS, infer GK>
+	? { [K in Exclude<keyof T, GK>]?: T[K] | undefined }
+	: never
+export type KeysTypeOf<S> = S extends Schema<infer T, infer KEYS, infer GK>
+	? { [K in KEYS]: T[K] }
+	: never
 
 ////////////////////////
 // Strict Schema Type //
@@ -36,8 +57,7 @@ export function schema<T extends { [K: string]: unknown }, KEYS extends keyof T,
 // - every prop strict checked
 //
 export class SchemaStrictType<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS> extends Type<
-	{ [K in RequiredKeys<T>]: T[K] }
-	& { [K in OptionalKeys<T>]?: T[K] }
+	{ [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] }
 > {
 	schema: Schema<T, KEYS, GK>
 
@@ -66,8 +86,7 @@ export class SchemaStrictType<T extends { [K: string]: unknown }, KEYS extends k
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<
-		{ [K in RequiredKeys<T>]: T[K] }
-		& { [K in OptionalKeys<T>]?: T[K] }
+		{ [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] }
 	> {
 		if (typeof u !== 'object' || u === null) {
 			return err('expected object')
@@ -117,7 +136,7 @@ export class SchemaPartialType<T extends { [K: string]: unknown }, KEYS extends 
 		const props = this.schema.props
 		return '{ '
 			+ (Object.keys(props) as (keyof T)[]).map(name =>
-				`${name}${isOk(props[name].type.ts.decode(undefined, {})) ? '?' : ''}: ${props[name].type.ts.print()}`
+				`${name}?: ${props[name].type.ts.print()}`
 			).join(', ')
 			+ ' }'
 	}
@@ -170,8 +189,7 @@ export function schemaPartial<T extends { [K: string]: unknown }, KEYS extends k
 // - optional fields: value | null | undefined
 //
 export class SchemaPatchType<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS> extends Type<
-	{ [K in RequiredKeys<T>]?: T[K] | undefined }
-	& { [K in OptionalKeys<T>]?: T[K] | null | undefined }
+	{ [K in RequiredKeys<T>]?: T[K] | undefined } & { [K in OptionalKeys<T>]?: T[K] | null | undefined }
 > {
 	schema: Schema<T, KEYS, GK>
 
@@ -184,7 +202,7 @@ export class SchemaPatchType<T extends { [K: string]: unknown }, KEYS extends ke
 		const props = this.schema.props
 		return '{ '
 			+ (Object.keys(props) as (keyof T)[]).map(name =>
-				`${name}${isOk(props[name].type.ts.decode(undefined, {})) ? '?' : ''}: ${props[name].type.ts.print()}`
+				`${name}?: ${props[name].type.ts.print()}${isOk(props[name].type.ts.decode(undefined, {})) ? ' | null' : ''}`
 			).join(', ')
 			+ ' }'
 	}
@@ -249,8 +267,7 @@ export function schemaPatch<T extends { [K: string]: unknown }, KEYS extends key
 // - other props strict checked
 //
 export class SchemaPostType<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS> extends Type<
-	{ [K in Exclude<RequiredKeys<T>, GK>]: T[K] }
-	& { [K in Exclude<OptionalKeys<T>, GK>]?: T[K] }
+	{ [K in Exclude<RequiredKeys<T>, GK>]: T[K] } & { [K in Exclude<OptionalKeys<T>, GK>]?: T[K] }
 > {
 	schema: Schema<T, KEYS, GK>
 
@@ -320,7 +337,7 @@ export function schemaPost<T extends { [K: string]: unknown }, KEYS extends keyo
 // - required fields: value | undefined
 // - optional fields: value | undefined
 //
-export class SchemaEditPostType<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS> extends Type<
+export class SchemaPostPartialType<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS> extends Type<
 	{ [K in Exclude<keyof T, GK>]?: T[K] | undefined }
 > {
 	schema: Schema<T, KEYS, GK>
@@ -334,7 +351,7 @@ export class SchemaEditPostType<T extends { [K: string]: unknown }, KEYS extends
 		const props = this.schema.props
 		return '{ '
 			+ (Object.keys(props) as (keyof T)[]).filter(name => name !== this.schema.genKey).map(name =>
-				`${name}${isOk(props[name].type.ts.decode(undefined, {})) ? '?' : ''}: ${props[name].type.ts.print()}`
+				`${name}?: ${props[name].type.ts.print()}`
 			).join(', ')
 			+ ' }'
 	}
@@ -377,8 +394,8 @@ export class SchemaEditPostType<T extends { [K: string]: unknown }, KEYS extends
 	}
 }
 
-export function schemaEditPost<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS>(schema: Schema<T, KEYS, GK>): SchemaEditPostType<T, KEYS, GK> {
-	return new SchemaEditPostType(schema)
+export function schemaPostPartial<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS>(schema: Schema<T, KEYS, GK>): SchemaPostPartialType<T, KEYS, GK> {
+	return new SchemaPostPartialType(schema)
 }
 
 //////////
@@ -400,8 +417,8 @@ export class SchemaKeysType<T extends { [K: string]: unknown }, KEYS extends key
 	print() {
 		const props = this.schema.props
 		return '{ '
-			+ (Object.keys(props) as (keyof T)[]).filter(name => name !== this.schema.genKey).map(name =>
-				`${name}${isOk(props[name].type.ts.decode(undefined, {})) ? '?' : ''}: ${props[name].type.ts.print()}`
+			+ this.schema.keys.map(name =>
+				`${name}: ${props[name].type.ts.print()}`
 			).join(', ')
 			+ ' }'
 	}
@@ -445,6 +462,5 @@ export class SchemaKeysType<T extends { [K: string]: unknown }, KEYS extends key
 export function schemaKeys<T extends { [K: string]: unknown }, KEYS extends keyof T, GK extends KEYS>(schema: Schema<T, KEYS, GK>): SchemaKeysType<T, KEYS, GK> {
 	return new SchemaKeysType(schema)
 }
-
 
 // vim: ts=4

@@ -2,18 +2,25 @@ import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './util
 
 // Validator class //
 /////////////////////
-export type Validator<T = unknown> = (value: T) => boolean | Promise<boolean>
+export type ValidatorFunc<T = unknown> = (value: T) => boolean | Promise<boolean>
+
+export interface ValidatorIF<T = unknown> {
+	validate: ValidatorFunc<T>
+	compose(): ValidatorFunc<T>
+}
+
+export type Validator<T> = ValidatorIF<T> | ValidatorFunc<T>
 
 export class ValidatorBase<T = unknown> {
 	parent?: ValidatorBase<T>
-	validate: Validator<T> = (value: T) => true
+	validF: ValidatorFunc<T> = (value: T) => true
 
-	constructor(validate: Validator<T>, parent?: ValidatorBase<T>) {
+	constructor(validF: ValidatorFunc<T>, parent?: ValidatorBase<T>) {
 		this.parent = parent
-		this.validate = validate
+		this.validF = validF
 	}
 
-	compose(): Validator<T> {
+	compose(): ValidatorFunc<T> {
 		const validateF = this.validate
 		if (this.parent) {
 			const parentF = this.parent.compose()
@@ -27,9 +34,15 @@ export class ValidatorBase<T = unknown> {
 		}
 	}
 
-	validator(v: T, next?: Validator<T>) {
-		return (!next || next(v)) && this.validate(v)
+	validate(v: T): boolean | Promise<boolean> {
+		return (!this.parent || this.parent.validate(v)) && this.validF(v)
 	}
+
+	/*
+	validator(v: T, next?: ValidatorFunc<T>) {
+		return (!next || next(v)) && this.validF(v)
+	}
+	*/
 
 	in(list: T[]) {
 		return Object.create(Object.getPrototypeOf(this), { parent: { value: this }, validate: { value: (v: T) => list.indexOf(v) >= 0 } })
@@ -50,33 +63,33 @@ export class NumberValidator extends ValidatorBase<number> {
 	}
 
 	min(min: number) {
-		return new NumberValidator((v: number) => v >= min)
+		return new NumberValidator((v: number) => v >= min, this)
 	}
 
 	max(min: number) {
-		return new NumberValidator((v: number) => v <= min)
+		return new NumberValidator((v: number) => v <= min, this)
 	}
 }
 
 export class StringValidator extends ValidatorBase<string> {
 	length(len: number) {
-		return new StringValidator((v: string) => v.length === len)
+		return new StringValidator((v: string) => v.length === len, this)
 	}
 
 	minLength(len: number) {
-		return new StringValidator((v: string) => v.length >= len)
+		return new StringValidator((v: string) => v.length >= len, this)
 	}
 
 	maxLength(len: number) {
-		return new StringValidator((v: string) => v.length <= len)
+		return new StringValidator((v: string) => v.length <= len, this)
 	}
 
-	in(list: string[]) {
-		return new StringValidator((v: string) => list.indexOf(v) >= 0)
+	in(list: string[]): StringValidator {
+		return new StringValidator((v: string) => list.indexOf(v) >= 0, this)
 	}
 
 	matches(pattern: RegExp) {
-		return new StringValidator((v: string) => pattern.test(v))
+		return new StringValidator((v: string) => pattern.test(v), this)
 	}
 
 	email() {
@@ -86,40 +99,40 @@ export class StringValidator extends ValidatorBase<string> {
 
 export class BooleanValidator extends ValidatorBase<boolean> {
 	true() {
-		return new BooleanValidator((v: boolean) => v)
+		return new BooleanValidator((v: boolean) => v, this)
 	}
 
 	false() {
-		return new BooleanValidator((v: boolean) => !v)
+		return new BooleanValidator((v: boolean) => !v, this)
 	}
 }
 
 export class DateValidator extends ValidatorBase<string> {
 	min(min: Date = new Date()) {
-		return new DateValidator((v: string) => Date.parse(v) >= min.valueOf())
+		return new DateValidator((v: string) => Date.parse(v) >= min.valueOf(), this)
 	}
 
 	max(max: Date = new Date()) {
-		return new DateValidator((v: string) => Date.parse(v) <= max.valueOf())
+		return new DateValidator((v: string) => Date.parse(v) <= max.valueOf(), this)
 	}
 }
 
-export const V = {
-	number: function number() {
-		return new NumberValidator((v: number) => (typeof v === 'number' && !Number.isNaN(v)))
-	},
-
-	string: function string() {
-		return new StringValidator((v: string) => typeof v === 'string')
-	},
-
-	boolean: function boolean() {
-		return new BooleanValidator((v: boolean) => typeof v === 'boolean')
-	},
-
-	date: function date() {
-		return new DateValidator((v: string) => typeof v === 'string' && !Number.isNaN(Date.parse(v)))
-	}
+// tslint:disable:strict-type-predicates
+export function number() {
+	return new NumberValidator((v: number) => (typeof v === 'number' && !Number.isNaN(v)))
 }
+
+export function string() {
+	return new StringValidator((v: string) => typeof v === 'string')
+}
+
+export function boolean() {
+	return new BooleanValidator((v: boolean) => typeof v === 'boolean')
+}
+
+export function date() {
+	return new DateValidator((v: string) => typeof v === 'string' && !Number.isNaN(Date.parse(v)))
+}
+// tslint:enable:strict-type-predicates
 
 // vim: ts=4

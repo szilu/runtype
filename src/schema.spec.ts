@@ -16,7 +16,14 @@ describe('test schema type', () => {
 		sk: { type: { ts: t.string }},
 		n: { type: { ts: t.number }},
 		b: { type: { ts: t.optional(t.boolean) }}
-	}, ['sk', 'ik'], 'ik')
+	}, ['ik', 'sk'], 'ik')
+
+	type StrictFromSchema = t.StrictTypeOf<typeof sk>
+	type PartialFromSchema = t.PartialTypeOf<typeof sk>
+	type PatchFromSchema = t.PatchTypeOf<typeof sk>
+	type PostFromSchema = t.PostTypeOf<typeof sk>
+	type PostPartialFromSchema = t.PostPartialTypeOf<typeof sk>
+	type KeysFromSchema = t.KeysTypeOf<typeof sk>
 
 	const tStrict = t.schemaStrict(sk)
 	type Strict = t.TypeOf<typeof tStrict>
@@ -30,8 +37,8 @@ describe('test schema type', () => {
 	const tPost = t.schemaPost(sk)
 	type Post = t.TypeOf<typeof tPost>
 
-	const tEditPost = t.schemaEditPost(sk)
-	type EditPost = t.TypeOf<typeof tEditPost>
+	const tPostPartial = t.schemaPostPartial(sk)
+	type PostPartial = t.TypeOf<typeof tPostPartial>
 
 	const tKeys = t.schemaKeys(sk)
 	type Keys = t.TypeOf<typeof tKeys>
@@ -46,7 +53,7 @@ describe('test schema type', () => {
 
 	const post1: Post = { sk: 'string', n: 42, b: true }
 
-	const editPost1: EditPost = { sk: 'string', n: 42, b: true }
+	const editPost1: PostPartial = { sk: 'string', n: 42, b: true }
 
 	const keys: Keys = { ik: 42, sk: 'string' }
 
@@ -55,6 +62,13 @@ describe('test schema type', () => {
 	//const patchErr1: Patch = { ik: 1, sk: 'string', n: 42, b: true }
 	//const postErr1: Post = { ik: 1, sk: 'string', n: 42, b: true }
 	//const keysErr1: Keys = { ik: 42, sk: 'string', n: 42 }
+
+	const schemaWithoutKeys = t.schema({
+		n: { type: { ts: t.number }},
+		b: { type: { ts: t.optional(t.boolean) }}
+	})
+
+	const tStrictWithoutKeys = t.schemaStrict(schemaWithoutKeys)
 
 	describe('test Strict schema type', () => {
 		it('should accept', () => {
@@ -92,11 +106,20 @@ describe('test schema type', () => {
 		it('should drop extra field with opt', () => {
 			expect(t.decode(tStrict, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }, { unknownFields: 'drop' })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true }))
 		})
+
+		it('should print type', () => {
+			expect(tStrict.print()).toBe('{ ik: integer, sk: string, n: number, b?: boolean | undefined }')
+			expect(tStrictWithoutKeys.print()).toBe('{ n: number, b?: boolean | undefined }')
+		})
 	})
 
 	describe('test Partial schema type', () => {
 		it('should accept', () => {
 			expect(t.decode(tPartial, { ik: 1, sk: 'string', n: 42, b: true })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true }))
+		})
+
+		it('should reject null', () => {
+			expect(t.decode(tPartial, null)).toBeErr()
 		})
 
 		it('should reject invalid field value', () => {
@@ -114,11 +137,23 @@ describe('test schema type', () => {
 		it('should reject extra field', () => {
 			expect(t.decode(tPartial, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' })).toBeErr()
 		})
+
+		it('should accept extra field with opt', () => {
+			expect(t.decode(tPartial, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }, { unknownFields: 'discard' })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }))
+		})
+
+		it('should print type', () => {
+			expect(tPartial.print()).toBe('{ ik?: integer, sk?: string, n?: number, b?: boolean | undefined }')
+		})
 	})
 
 	describe('test Patch schema type', () => {
 		it('should accept', () => {
 			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 42, b: true })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true }))
+		})
+
+		it('should reject null', () => {
+			expect(t.decode(tPatch, null)).toBeErr()
 		})
 
 		it('should reject invalid field value', () => {
@@ -144,6 +179,14 @@ describe('test schema type', () => {
 		it('should reject extra field', () => {
 			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' })).toBeErr()
 		})
+
+		it('should accept extra field with opt', () => {
+			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }, { unknownFields: 'discard' })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }))
+		})
+
+		it('should print type', () => {
+			expect(tPatch.print()).toBe('{ ik?: integer, sk?: string, n?: number, b?: boolean | undefined | null }')
+		})
 	})
 
 	describe('test Post schema type', () => {
@@ -151,18 +194,54 @@ describe('test schema type', () => {
 			expect(t.decode(tPost, { sk: 'string', n: 42, b: true })).toEqual(t.ok({ sk: 'string', n: 42, b: true }))
 		})
 
+		it('should reject null', () => {
+			expect(t.decode(tPost, null)).toBeErr()
+		})
+
+		it('should reject invalid field value', () => {
+			expect(t.decode(tPost, { sk: 'string', n: '42', b: true })).toBeErr()
+		})
+
 		it('should reject struct with key', () => {
 			expect(t.decode(tPost, { ik: 1, sk: 'string', n: 42, b: true })).toBeErr()
 		})
-	})
 
-	describe('test Post schema type', () => {
-		it('should accept struct without genKey', () => {
-			expect(t.decode(tEditPost, { sk: 'string', n: 42, b: true })).toEqual(t.ok({ sk: 'string', n: 42, b: true }))
+		it('should accept extra field and key with opt', () => {
+			expect(t.decode(tPost, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }, { unknownFields: 'discard' })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }))
 		})
 
-		it('should reject struct with key', () => {
-			expect(t.decode(tEditPost, { ik: 1, sk: 'string', n: 42, b: true })).toBeErr()
+		it('should print type', () => {
+			expect(tPost.print()).toBe('{ sk: string, n: number, b?: boolean | undefined }')
+		})
+	})
+
+	describe('test PostPartial schema type', () => {
+		it('should accept struct without genKey', () => {
+			expect(t.decode(tPostPartial, { sk: 'string', n: 42, b: true })).toEqual(t.ok({ sk: 'string', n: 42, b: true }))
+		})
+
+		it('should accept missing required field', () => {
+			expect(t.decode(tPostPartial, { sk: 'string', b: true })).toEqual(t.ok({ sk: 'string', b: true }))
+		})
+
+		it('should reject null', () => {
+			expect(t.decode(tPostPartial, null)).toBeErr()
+		})
+
+		it('should reject invalid field value', () => {
+			expect(t.decode(tPostPartial, { sk: 'string', n: '42', b: true })).toBeErr()
+		})
+
+		it('should reject struct with genKey', () => {
+			expect(t.decode(tPostPartial, { ik: 1, sk: 'string', n: 42, b: true })).toBeErr()
+		})
+
+		it('should accept extra field and genKey with opt', () => {
+			expect(t.decode(tPostPartial, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }, { unknownFields: 'discard' })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }))
+		})
+
+		it('should print type', () => {
+			expect(tPostPartial.print()).toBe('{ sk?: string, n?: number, b?: boolean | undefined }')
 		})
 	})
 
@@ -171,12 +250,24 @@ describe('test schema type', () => {
 			expect(t.decode(tKeys, { ik: 42, sk: 'string' })).toEqual(t.ok({ ik: 42, sk: 'string' }))
 		})
 
+		it('should reject null', () => {
+			expect(t.decode(tKeys, null)).toBeErr()
+		})
+
 		it('should reject non-key field', () => {
 			expect(t.decode(tKeys, { ik: 1, sk: 'string', n: 42 })).toBeErr()
 		})
 
 		it('should reject struct with missing key field', () => {
 			expect(t.decode(tKeys, { ik: 1 })).toBeErr()
+		})
+
+		it('should accept extra field with opt', () => {
+			expect(t.decode(tKeys, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }, { unknownFields: 'discard' })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }))
+		})
+
+		it('should print type', () => {
+			expect(tKeys.print()).toBe('{ ik: integer, sk: string }')
 		})
 	})
 })

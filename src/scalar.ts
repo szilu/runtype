@@ -38,8 +38,8 @@ class StringDecoder extends Type<string> {
 		switch (typeof u) {
 			case 'string': return ok(u)
 			case 'number': if (opts.coerceNumberToString || opts.coerceScalar || opts.coerceAll) return ok('' + u)
-			default: return err('expected string')
 		}
+		return err('expected string')
 	}
 }
 export const string = new StringDecoder()
@@ -53,10 +53,12 @@ class NumberDecoder extends Type<number> {
 
 	decode(u: unknown, opts: DecoderOpts) {
 		switch (typeof u) {
-			case 'number': if (opts.acceptNaN || !Number.isNaN(u)) return ok(u)
+			case 'number': if (opts.acceptNaN || !Number.isNaN(u)) {
+				return ok(u)
+			} else break
 			case 'string': if (opts.coerceStringToNumber || opts.coerceScalar || opts.coerceAll) return ok(+u)
-			default: return err('expected number')
 		}
+		return err('expected number')
 	}
 }
 export const number = new NumberDecoder()
@@ -87,8 +89,8 @@ class BooleanDecoder extends Type<boolean> {
 		switch (typeof u) {
 			case 'boolean': return ok(u)
 			case 'number': if (opts.coerceNumberToBoolean || opts.coerceScalar || opts.coerceAll) return ok(!!u)
-			default: return err('expected boolean')
 		}
+		return err('expected boolean')
 	}
 }
 export const boolean = new BooleanDecoder()

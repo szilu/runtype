@@ -27,5 +27,4 @@ export type Narrow<T> = T extends string | number | boolean ? T : never
 export type OptionalKeys<T> = { [P in keyof T]: undefined extends T[P] ? P : never }[keyof T]
 export type RequiredKeys<T> = { [P in keyof T]: undefined extends T[P] ? never : P }[keyof T]
 
-
 // vim: ts=4

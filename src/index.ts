@@ -16,7 +16,4 @@ export * from './union'
 
 export * from './schema'
 
-// Validator
-export * from './validator'
-
 // vim: ts=4

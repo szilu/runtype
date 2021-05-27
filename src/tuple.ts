@@ -3,7 +3,7 @@ import { Type, DecoderOpts } from './type'
 
 // Tuple //
 ///////////
-//class TupleType<A extends ReadonlyArray<unknown>> extends Type<{ [K in keyof A]: A[K] }> {
+// class TupleType<A extends ReadonlyArray<unknown>> extends Type<{ [K in keyof A]: A[K] }> {
 class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 	memberTypes: { [K in keyof A]: Type<A[K]> }
 
@@ -40,7 +40,7 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 	}
 }
 
-//export function tuple<A extends ReadonlyArray<unknown>>(...memberTypes: { [K in keyof A]: Type<A[K]> }): Type<{ [K in keyof A]: A[K] }> {
+// export function tuple<A extends ReadonlyArray<unknown>>(...memberTypes: { [K in keyof A]: Type<A[K]> }): Type<{ [K in keyof A]: A[K] }> {
 export function tuple<A extends ReadonlyArray<unknown>>(...memberTypes: { [K in keyof A]: Type<A[K]> }): Type<A> {
 	return new TupleType<A>(memberTypes)
 }
