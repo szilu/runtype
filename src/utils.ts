@@ -10,7 +10,7 @@ export interface Err {
 	readonly err: string
 }
 
-export type Result<T> = Ok<T> | Err
+export type Result<T = undefined> = Ok<T> | Err
 
 export function ok<T>(t: T): Ok<T> { return { _tag: 'Ok', ok: t } }
 
@@ -26,5 +26,13 @@ export type Narrow<T> = T extends string | number | boolean ? T : never
 
 export type OptionalKeys<T> = { [P in keyof T]: undefined extends T[P] ? P : never }[keyof T]
 export type RequiredKeys<T> = { [P in keyof T]: undefined extends T[P] ? never : P }[keyof T]
+
+// Other helper funcs //
+////////////////////////
+export function isEmptyObject(obj: unknown) {
+	if (typeof obj !== 'object' || obj === null) return false
+	for (const k in obj) return false
+	return true
+}
 
 // vim: ts=4

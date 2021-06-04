@@ -1,4 +1,5 @@
 import * as t from './index'
+import * as v from './validator'
 import './jest.local.ts'
 
 declare global {
@@ -12,10 +13,10 @@ declare global {
 describe('test schema type', () => {
 	// Schema
 	const sk = t.schema({
-		ik: { type: { ts: t.integer }},
-		sk: { type: { ts: t.string }},
-		n: { type: { ts: t.number }},
-		b: { type: { ts: t.optional(t.boolean) }}
+		ik: { type: { ts: t.integer } },
+		sk: { type: { ts: t.string }, valid: v.string().matches(/^valid /) },
+		n: { type: { ts: t.number, valid: v.number().positive() } },
+		b: { type: { ts: t.optional(t.boolean) } }
 	}, ['ik', 'sk'], 'ik')
 
 	type StrictFromSchema = t.StrictTypeOf<typeof sk>
@@ -268,6 +269,20 @@ describe('test schema type', () => {
 
 		it('should print type', () => {
 			expect(tKeys.print()).toBe('{ ik: integer, sk: string }')
+		})
+	})
+
+	describe('test schema validator', () => {
+		it('should accept valid struct', async () => {
+			expect(await t.validateSchema(sk, { ik: 42, sk: 'valid string', n: 42, b: true })).toBe(null)
+		})
+
+		it('should reject invalid string', async () => {
+			expect(await t.validateSchema(sk, { ik: 42, sk: 'invalid string', n: 42, b: true })).toEqual([['sk', 'must match /^valid /']])
+		})
+
+		it('should reject invalid number', async () => {
+			expect(await t.validateSchema(sk, { ik: 42, sk: 'valid string', n: -42, b: true })).toEqual([['n', 'must be positive']])
 		})
 	})
 })
