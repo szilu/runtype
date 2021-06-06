@@ -8,7 +8,7 @@ export interface FieldType<T> {
 	valid?: Validator<Exclude<T, undefined>>
 }
 
-interface FieldDesc<T> {
+export interface FieldDesc<T> {
 	type: FieldType<T>
 	valid?: Validator<Exclude<T, undefined>>
 	desc?: string
@@ -550,14 +550,31 @@ export function schemaKeys<T, KEYS extends keyof T, GK extends KEYS>(schema: Sch
 ////////////////
 // Validation //
 ////////////////
-export async function validateSchema<T, KEYS extends keyof T, GK extends KEYS>(schema: Schema<T, KEYS, GK>, state: Partial<T>): Promise<[keyof T, string][] | null> {
+export async function validateSchema<T, KEYS extends keyof T, GK extends KEYS>(
+	schema: Schema<T, KEYS, GK>,
+	tp: 'Strict' | 'Partial' | 'Patch' | 'Post' | 'PostPartial',
+	state: Partial<T>
+): Promise<[keyof T, string][] | null> {
 	let errors: [keyof T, string][] = []
+
 	for (const name in schema.props) {
 		const prop = schema.props[name]
-		let res: Result = ok(undefined)
+		const v = state[name]
+		let res: Result<any> = ok(undefined)
 
-		if (prop.type && prop.type.valid) res = await validate(state[name], prop.type.ts, prop.type.valid)
-		if (prop.type && isOk(res) && prop.valid) res = await validate(state[name], prop.type.ts, prop.valid)
+		if (tp === 'Strict'
+		   || (tp === 'Partial' && v !== undefined)
+		   || (tp === 'Patch' && v != null)
+		   || (tp === 'Post')
+		   || (tp === 'PostPartial' && v !== undefined)
+	   ) {
+			res = prop.type
+				? prop.type.ts.decode(v, {})
+				: decodeSubSchema(v, prop.optional, prop.multiple)
+			if (prop.type && prop.type.valid) res = await validate(state[name], prop.type.ts, prop.type.valid)
+			if (prop.type && isOk(res) && prop.valid) res = await validate(state[name], prop.type.ts, prop.valid)
+		}
+
 		if (isErr(res)) errors.push([name, res.err])
 	}
 	return errors.length ? errors : null

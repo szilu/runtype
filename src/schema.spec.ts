@@ -404,15 +404,19 @@ describe('test schema type', () => {
 
 	describe('test schema validator', () => {
 		it('should accept valid struct', async () => {
-			expect(await t.validateSchema(sk, { ik: 42, sk: 'valid string', n: 42, b: true })).toBe(null)
+			expect(await t.validateSchema(sk, 'Strict', { ik: 42, sk: 'valid string', n: 42, b: true })).toBe(null)
+		})
+
+		it('should accept partial struct', async () => {
+			expect(await t.validateSchema(sk, 'Partial', { ik: 42, b: true })).toBe(null)
 		})
 
 		it('should reject invalid string', async () => {
-			expect(await t.validateSchema(sk, { ik: 42, sk: 'invalid string', n: 42, b: true })).toEqual([['sk', 'must match /^valid /']])
+			expect(await t.validateSchema(sk, 'Strict', { ik: 42, sk: 'invalid string', n: 42, b: true })).toEqual([['sk', 'must match /^valid /']])
 		})
 
 		it('should reject invalid number', async () => {
-			expect(await t.validateSchema(sk, { ik: 42, sk: 'valid string', n: -42, b: true })).toEqual([['n', 'must be positive']])
+			expect(await t.validateSchema(sk, 'Strict', { ik: 42, sk: 'valid string', n: -42, b: true })).toEqual([['n', 'must be positive']])
 		})
 	})
 
