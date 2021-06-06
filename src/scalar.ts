@@ -134,6 +134,32 @@ class AnyDecoder extends Type<any> {
 }
 export const any = new AnyDecoder()
 
+// Unknown //
+/////////////
+class UnknownDecoder extends Type<{}> {
+	print() {
+		return 'unknown'
+	}
+
+	decode(u: unknown, opts: DecoderOpts) {
+		return u != null ? ok(u as {}) : err('expected anything but undefined')
+	}
+}
+export const unknown = new UnknownDecoder()
+
+// UnknownObject //
+///////////////////
+class UnknownObjectDecoder extends Type<{}> {
+	print() {
+		return 'object'
+	}
+
+	decode(u: unknown, opts: DecoderOpts) {
+		return typeof u === 'object' && u !== null ? ok(u as {}) : err('expected object')
+	}
+}
+export const unknownObject = new UnknownObjectDecoder()
+
 // Literal //
 /////////////
 type Scalar = boolean | number | string

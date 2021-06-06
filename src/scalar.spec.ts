@@ -62,6 +62,32 @@ describe('test basic types', () => {
 		})
 	})
 
+	describe('test unknown type', () => {
+		it('should accept string', () => {
+			expect(t.decode(t.unknown, 'some string')).toEqual(t.ok('some string'))
+		})
+
+		it('should accept number', () => {
+			expect(t.decode(t.unknown, 42)).toEqual(t.ok(42))
+		})
+
+		it('should accept object', () => {
+			expect(t.decode(t.unknown, {})).toEqual(t.ok({}))
+		})
+
+		it('should reject undefined', () => {
+			expect(t.decode(t.unknown, undefined)).toBeErr()
+		})
+
+		it('should reject null', () => {
+			expect(t.decode(t.unknown, null)).toBeErr()
+		})
+
+		it('should print type', () => {
+			expect(t.any.print()).toBe('any')
+		})
+	})
+
 	describe('test string type', () => {
 		it('should accept a string', () => {
 			expect(t.decode(t.string, 'some string')).toEqual(t.ok('some string'))
