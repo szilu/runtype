@@ -1,5 +1,5 @@
 import { Result, ok, err, isOk } from './utils'
-import { Type, DecoderOpts } from './type'
+import { Type, DecoderOpts, DecoderError, decoderError } from './type'
 
 // Nullable //
 //////////////
@@ -18,7 +18,7 @@ class NullableType<T> extends Type<T | null | undefined> {
 	decode(u: unknown, opts: DecoderOpts) {
 		if (u === null || u === undefined) return ok(u)
 		const res = this.type.decode(u, opts)
-		return isOk(res) ? res : err(res.err + ' | null | undefined')
+		return isOk(res) ? res : err(res.err)
 	}
 }
 

@@ -1,5 +1,5 @@
 import { Result, ok, err, isOk, RequiredKeys, OptionalKeys } from './utils'
-import { Type, DecoderOpts } from './type'
+import { Type, DecoderOpts, DecoderError, decoderError } from './type'
 
 // Struct //
 ////////////
@@ -23,26 +23,28 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 	}
 
 	checkExtraFields(struct: Record<keyof T, unknown>, opts: DecoderOpts) {
-		let errors: string[] = []
+		let errors: DecoderError = []
 
 		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
 		for (const p of Object.getOwnPropertyNames(struct)) {
-			if (!this.props.hasOwnProperty(p)) errors.push(`${p}: unknown field`)
+			//if (!this.props.hasOwnProperty(p)) errors.push(`${p}: unknown field`)
+			if (!this.props.hasOwnProperty(p)) errors.push({ path: [p], error: 'unknown field' })
 		}
 		return errors
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<
 		{ [K in RequiredKeys<T>]: T[K] }
-		& { [K in OptionalKeys<T>]?: T[K] }
+		& { [K in OptionalKeys<T>]?: T[K] },
+		DecoderError
 	> {
 		if (typeof u !== 'object' || u === null) {
-			return err('expected object')
+			return decoderError([], 'expected object')
 		}
 
 		const ret: { [K in keyof T]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
 		const struct: Record<keyof T, unknown> = u as any
-		let errors: string[] = []
+		let errors: DecoderError = []
 
 		// decode fields
 		for (const p in this.props) {
@@ -50,12 +52,14 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 			if (isOk(res)) {
 				ret[p] = res.ok
 			} else {
-				errors.push(`${p}: ${res.err}`)
+				//errors.push(`${p}: ${res.err}`)
+				errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
 			}
 		}
 		// check extra fields
 		errors.splice(-1, 0, ...this.checkExtraFields(struct, opts))
-		if (errors.length) return err(errors.join('\n'))
+		//if (errors.length) return err(errors.join('\n'))
+		if (errors.length) return err(errors)
 		return ok(ret as { [K in keyof T]: T[K] })
 	}
 }

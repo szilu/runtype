@@ -130,7 +130,7 @@ describe('test validators', () => {
 		})
 
 		it('should reject non-matching email', async () => {
-			expect(await t.validate('a@a', t.string, v.string().email())).toEqual(t.err('must be valid email address'))
+			expect(await t.validate('a@a', t.string, v.string().email())).toEqual(t.err([{ path: [], error: 'must be valid email address' }]))
 		})
 	})
 	describe('test boolean validator', () => {
@@ -167,7 +167,7 @@ describe('test validators', () => {
 		})
 
 		it('should reject non-min', async () => {
-			expect(await t.validate('2021-06-01', t.string, v.date().min('2021-06-02'))).toEqual(t.err('must be at least 2021-06-02T00:00:00.000Z'))
+			expect(await t.validate('2021-06-01', t.string, v.date().min('2021-06-02'))).toEqual(t.err([{ path: [], error: 'must be at least 2021-06-02T00:00:00.000Z' }]))
 		})
 
 		// max
@@ -176,7 +176,7 @@ describe('test validators', () => {
 		})
 
 		it('should reject non-min', async () => {
-			expect(await t.validate('2021-06-03', t.string, v.date().max('2021-06-02'))).toEqual(t.err('must be at most 2021-06-02T00:00:00.000Z'))
+			expect(await t.validate('2021-06-03', t.string, v.date().max('2021-06-02'))).toEqual(t.err([{ path: [], error: 'must be at most 2021-06-02T00:00:00.000Z' }]))
 		})
 	})
 	describe('test validator function', () => {
@@ -187,7 +187,7 @@ describe('test validators', () => {
 		})
 
 		it('should reject 43', async () => {
-			expect(await t.validate(43, t.number, accept42)).toEqual(t.err('must be 42'))
+			expect(await t.validate(43, t.number, accept42)).toEqual(t.err([{ path: [], error: 'must be 42' }]))
 		})
 	})
 	describe('test validator composition', () => {
@@ -198,7 +198,7 @@ describe('test validators', () => {
 		})
 
 		it('should reject 43', async () => {
-			expect(await t.validate(43, t.number, accept42)).toEqual(t.err('must be one of [42]'))
+			expect(await t.validate(43, t.number, accept42)).toEqual(t.err([{ path: [], error: 'must be one of [42]' }]))
 		})
 	})
 })

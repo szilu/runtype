@@ -5,20 +5,20 @@ export interface Ok<T> {
 	readonly ok: T
 }
 
-export interface Err {
+export interface Err<E = string> {
 	readonly _tag: 'Err'
-	readonly err: string
+	readonly err: E
 }
 
-export type Result<T = undefined> = Ok<T> | Err
+export type Result<T = undefined, E = string> = Ok<T> | Err<E>
 
 export function ok<T>(t: T): Ok<T> { return { _tag: 'Ok', ok: t } }
 
-export function err(error: string): Err { return { _tag: 'Err', err: error } }
+export function err<E>(error: E): Err<E> { return { _tag: 'Err', err: error } }
 
-export function isOk<T>(r: Result<T>): r is Ok<T> { return r._tag === 'Ok' }
+export function isOk<T, E>(r: Result<T, E>): r is Ok<T> { return r._tag === 'Ok' }
 
-export function isErr(r: Result<any>): r is Err { return r._tag === 'Err' }
+export function isErr<E>(r: Result<any, E>): r is Err<E> { return r._tag === 'Err' }
 
 // TS helpers //
 ////////////////

@@ -1,5 +1,5 @@
 import { Result, ok, err, isOk } from './utils'
-import { Type, DecoderOpts } from './type'
+import { Type, DecoderOpts, DecoderError, decoderError } from './type'
 
 // Constants //
 ///////////////
@@ -17,7 +17,7 @@ class ConstantDecoder<T> extends Type<T> {
 	}
 
 	decode(u: unknown, opts: DecoderOpts) {
-		if (u !== this.value) return err('expected ' + JSON.stringify(this.value))
+		if (u !== this.value) return decoderError([], 'expected ' + JSON.stringify(this.value))
 		return ok(u as T)
 	}
 }
@@ -39,7 +39,7 @@ class StringDecoder extends Type<string> {
 			case 'string': return ok(u)
 			case 'number': if (opts.coerceNumberToString || opts.coerceScalar || opts.coerceAll) return ok('' + u)
 		}
-		return err('expected string')
+		return decoderError([], 'expected string')
 	}
 }
 export const string = new StringDecoder()
@@ -58,7 +58,7 @@ class NumberDecoder extends Type<number> {
 			} else break
 			case 'string': if (opts.coerceStringToNumber || opts.coerceScalar || opts.coerceAll) return ok(+u)
 		}
-		return err('expected number')
+		return decoderError([], 'expected number')
 	}
 }
 export const number = new NumberDecoder()
@@ -72,7 +72,7 @@ class IntegerDecoder extends Type<number> {
 
 	decode(u: unknown, opts: DecoderOpts) {
 		const num = number.decode(u, opts)
-		if (isOk(num) && Number.isInteger(u)) return num; else return err('expected integer')
+		if (isOk(num) && Number.isInteger(num.ok)) return num; else return decoderError([], 'expected integer')
 	}
 }
 export const integer = new IntegerDecoder()
@@ -89,8 +89,9 @@ class BooleanDecoder extends Type<boolean> {
 		switch (typeof u) {
 			case 'boolean': return ok(u)
 			case 'number': if (opts.coerceNumberToBoolean || opts.coerceScalar || opts.coerceAll) return ok(!!u)
+			case 'string': if ((opts.coerceStringToNumber && opts.coerceNumberToBoolean) || opts.coerceScalar || opts.coerceAll) return ok(Number.isFinite(+u) ? !!+u : !!u)
 		}
-		return err('expected boolean')
+		return decoderError([], 'expected boolean')
 	}
 }
 export const boolean = new BooleanDecoder()
@@ -115,7 +116,7 @@ class DateDecoder extends Type<Date> {
 		if (date !== undefined && !isNaN(date.valueOf())) {
 			return ok(date)
 		} else {
-			return err('expected date')
+			return decoderError([], 'expected date')
 		}
 	}
 }
@@ -142,7 +143,7 @@ class UnknownDecoder extends Type<{}> {
 	}
 
 	decode(u: unknown, opts: DecoderOpts) {
-		return u != null ? ok(u as {}) : err('expected anything but undefined')
+		return u != null ? ok(u as {}) : decoderError([], 'expected anything but undefined')
 	}
 }
 export const unknown = new UnknownDecoder()
@@ -155,7 +156,7 @@ class UnknownObjectDecoder extends Type<{}> {
 	}
 
 	decode(u: unknown, opts: DecoderOpts) {
-		return typeof u === 'object' && u !== null ? ok(u as {}) : err('expected object')
+		return typeof u === 'object' && u !== null ? ok(u as {}) : decoderError([], 'expected object')
 	}
 }
 export const unknownObject = new UnknownObjectDecoder()
@@ -184,7 +185,7 @@ class LiteralDecoder<T extends ReadonlyArray<Scalar>> extends Type<T[number]> {
 
 	decode(u: unknown, opts: DecoderOpts) {
 		if (!isScalar(u)
-			|| !this.values.includes(u)) return err(`expected ${this.values.map(v => JSON.stringify(v)).join(' | ')}`)
+			|| !this.values.includes(u)) return decoderError([], `expected ${this.values.map(v => JSON.stringify(v)).join(' | ')}`)
 		return ok(u as T[number])
 	}
 }

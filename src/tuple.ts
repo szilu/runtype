@@ -1,5 +1,5 @@
 import { Result, ok, err, isOk } from './utils'
-import { Type, DecoderOpts } from './type'
+import { Type, DecoderOpts, DecoderError, decoderError } from './type'
 
 // Tuple //
 ///////////
@@ -18,13 +18,13 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 
 	decode(u: unknown, opts: DecoderOpts) {
 		const ret: { -readonly [K in number]?: A[K] } = []
-		let errors: string[] = []
+		let errors: DecoderError = []
 
 		if (!Array.isArray(u)) {
-			return err('expected Array')
+			return decoderError([], 'expected Array')
 		}
 		if (u.length !== this.memberTypes.length) {
-			return err('missing fields in Tuple')
+			return decoderError([], 'missing fields in Tuple')
 		}
 
 		for (let i = 0; i < u.length; i++) {
@@ -32,10 +32,12 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 			if (isOk(res)) {
 				ret[i] = res.ok
 			} else {
-				errors.push(`${i}: ${res.err}`)
+				//errors.push(`${i}: ${res.err}`)
+				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
 			}
 		}
-		if (errors.length) return err(errors.join('\n'))
+		//if (errors.length) return err(errors.join('\n'))
+		if (errors.length) return err(errors)
 		return ok(ret as A)
 	}
 }

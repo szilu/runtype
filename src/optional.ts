@@ -1,5 +1,5 @@
 import { Result, ok, err, isOk } from './utils'
-import { Type, DecoderOpts } from './type'
+import { Type, DecoderOpts, DecoderError, decoderError } from './type'
 
 // Optional //
 //////////////
@@ -15,10 +15,10 @@ class OptionalDecoder<T> extends Type<T | undefined> {
 		return this.type.print() + ' | undefined'
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<T | undefined> {
+	decode(u: unknown, opts: DecoderOpts): Result<T | undefined, DecoderError> {
 		if (u === undefined) return ok(undefined)
 		const res = this.type.decode(u, opts)
-		return isOk(res) ? res : err(res.err + ' | undefined')
+		return isOk(res) ? res : err(res.err)
 	}
 }
 

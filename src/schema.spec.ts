@@ -23,6 +23,7 @@ describe('test schema type', () => {
 		k: { type: { ts: t.integer } },
 		n: { type: { ts: t.number, valid: v.number().positive() } },
 		b: { type: { ts: t.optional(t.boolean) } },
+		deep: { type: { ts: t.nullable(t.optional(t.struct({ a: t.array(t.tuple(t.number, t.string)) }))) } },
 		//sub: { type: { ts: t.array(t.unknown) }, multiple: true, schema: sk }
 		sub: { schema: sk },
 		submul: { multiple: true, schema: sk },
@@ -164,7 +165,8 @@ describe('test schema type', () => {
 		})
 
 		it('should print subschema', () => {
-			expect(tStrictSub.print()).toBe('{ k: integer, n: number, b?: boolean | undefined, sub: { ik: integer, sk: string, n: number, b?: boolean | undefined }, submul: { ik: integer, sk: string, n: number, b?: boolean | undefined }[], optsub?: { ik: integer, sk: string, n: number, b?: boolean | undefined }, optsubmul?: { ik: integer, sk: string, n: number, b?: boolean | undefined }[] }')
+			//expect(tStrictSub.print()).toBe('{ k: integer, n: number, b?: boolean | undefined, sub: { ik: integer, sk: string, n: number, b?: boolean | undefined }, submul: { ik: integer, sk: string, n: number, b?: boolean | undefined }[], optsub?: { ik: integer, sk: string, n: number, b?: boolean | undefined }, optsubmul?: { ik: integer, sk: string, n: number, b?: boolean | undefined }[] }')
+			expect(tStrictSub.print()).toBe('{ k: integer, n: number, b?: boolean | undefined, deep?: { a: [number, string][] } | undefined | null | undefined, sub: { ik: integer, sk: string, n: number, b?: boolean | undefined }, submul: { ik: integer, sk: string, n: number, b?: boolean | undefined }[], optsub?: { ik: integer, sk: string, n: number, b?: boolean | undefined }, optsubmul?: { ik: integer, sk: string, n: number, b?: boolean | undefined }[] }')
 		})
 	})
 
@@ -224,7 +226,11 @@ describe('test schema type', () => {
 
 	describe('test Patch schema type', () => {
 		it('should accept', () => {
-			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 42, b: true })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true }))
+			expect(t.decode(tPatch, { n: 42, b: true })).toEqual(t.ok({ n: 42, b: true }))
+		})
+
+		it('should reject keys', () => {
+			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 42, b: true })).toBeErr()
 		})
 
 		it('should reject null', () => {
@@ -232,40 +238,38 @@ describe('test schema type', () => {
 		})
 
 		it('should reject invalid field value', () => {
-			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 'string', b: true })).toBeErr()
+			expect(t.decode(tPatch, { n: 'string', b: true })).toBeErr()
 		})
 
 		it('should accept missing optional field', () => {
-			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 42 })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42 }))
+			expect(t.decode(tPatch, { n: 42 })).toEqual(t.ok({ n: 42 }))
 		})
 
 		it('should accept missing required field', () => {
-			expect(t.decode(tPatch, { ik: 1, sk: 'string', b: true })).toEqual(t.ok({ ik: 1, sk: 'string', b: true }))
+			expect(t.decode(tPatch, { b: true })).toEqual(t.ok({ b: true }))
 		})
 
 		it('should accept null value in optional field', () => {
-			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 42, b: null })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: null }))
+			expect(t.decode(tPatch, { n: 42, b: null })).toEqual(t.ok({ n: 42, b: null }))
 		})
 
 		it('should reject null value in required field', () => {
-			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: null, b: true })).toBeErr()
+			expect(t.decode(tPatch, { n: null, b: true })).toBeErr()
 		})
 
 		it('should reject extra field', () => {
-			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' })).toBeErr()
+			expect(t.decode(tPatch, { n: 42, b: true, e: 'extra' })).toBeErr()
 		})
 
 		it('should accept extra field with opt', () => {
-			expect(t.decode(tPatch, { ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }, { unknownFields: 'discard' })).toEqual(t.ok({ ik: 1, sk: 'string', n: 42, b: true, e: 'extra' }))
+			expect(t.decode(tPatch, { n: 42, b: true, e: 'extra' }, { unknownFields: 'discard' })).toEqual(t.ok({ n: 42, b: true, e: 'extra' }))
 		})
 
 		it('should accept any object in subschema', () => {
 			expect(t.decode(tPatchSub, {
-				k: 1,
 				n: 42,
 				submul: [{}]
 			})).toEqual(t.ok({
-				k: 1,
 				n: 42,
 				submul: [{}]
 			}))
@@ -412,11 +416,15 @@ describe('test schema type', () => {
 		})
 
 		it('should reject invalid string', async () => {
-			expect(await t.validateSchema(sk, 'Strict', { ik: 42, sk: 'invalid string', n: 42, b: true })).toEqual([['sk', 'must match /^valid /']])
+			expect(await t.validateSchema(sk, 'Strict', { ik: 42, sk: 'invalid string', n: 42, b: true })).toEqual([{ path: ['sk'], error: 'must match /^valid /'}])
 		})
 
 		it('should reject invalid number', async () => {
-			expect(await t.validateSchema(sk, 'Strict', { ik: 42, sk: 'valid string', n: -42, b: true })).toEqual([['n', 'must be positive']])
+			expect(await t.validateSchema(sk, 'Strict', { ik: 42, sk: 'valid string', n: -42, b: true })).toEqual([{ path: ['n'], error: 'must be positive'}])
+		})
+
+		it('should reject invalid number', async () => {
+			expect(await t.validateSchema(ss, 'Partial', { k: 1, n: 42, deep: { a: [[1, 'a'], [2, null]] } })).toEqual([{ path: ['deep', 'a', '1', '1'], error: 'expected string'}])
 		})
 	})
 
@@ -426,6 +434,7 @@ describe('test schema type', () => {
 				{ name: 'k', type: 'integer', desc: '' },
 				{ name: 'n', type: 'number', desc: '' },
 				{ name: 'b', type: 'boolean | undefined', desc: '' },
+				{ name: 'deep', type: '{ a: [number, string][] } | undefined | null | undefined', desc: '' },
 				{
 					name: 'sub',
 					schema: [

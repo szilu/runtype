@@ -1,5 +1,5 @@
 import { Result, err, isOk } from './utils'
-import { Type, DecoderOpts } from './type'
+import { Type, DecoderOpts, DecoderError, decoderError } from './type'
 
 // Union //
 ///////////
@@ -15,7 +15,7 @@ class UnionType<T extends ReadonlyArray<unknown>> extends Type/*BaseDecoder*/<T[
 		return this.members.map(member => member.print()).join(' | ')
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<T[number]> {
+	decode(u: unknown, opts: DecoderOpts): Result<T[number], DecoderError> {
 		let errors: string[] = []
 
 		for (const m of this.members) {
@@ -24,7 +24,7 @@ class UnionType<T extends ReadonlyArray<unknown>> extends Type/*BaseDecoder*/<T[
 				return matched
 			}
 		}
-		return err(`expected UNION FIXME`)
+		return decoderError([], `expected UNION FIXME`)
 	}
 }
 
