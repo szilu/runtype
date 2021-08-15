@@ -406,6 +406,7 @@ describe('test schema type', () => {
 		})
 	})
 
+	/*
 	describe('test schema validator', () => {
 		it('should accept valid struct', async () => {
 			expect(await t.validateSchema(sk, 'Strict', { ik: 42, sk: 'valid string', n: 42, b: true })).toBe(null)
@@ -427,6 +428,7 @@ describe('test schema type', () => {
 			expect(await t.validateSchema(ss, 'Partial', { k: 1, n: 42, deep: { a: [[1, 'a'], [2, null]] } })).toEqual([{ path: ['deep', 'a', '1', '1'], error: 'expected string'}])
 		})
 	})
+	*/
 
 	describe('test schema descriptor', () => {
 		it('should describe schema', async () => {

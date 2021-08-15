@@ -24,7 +24,7 @@ class UnionType<T extends ReadonlyArray<unknown>> extends Type/*BaseDecoder*/<T[
 				return matched
 			}
 		}
-		return decoderError([], `expected UNION FIXME`)
+		return decoderError([], `non of the union type members matched`)
 	}
 }
 

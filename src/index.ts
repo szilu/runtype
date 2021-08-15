@@ -13,6 +13,7 @@ export * from './array'
 export * from './struct'
 export * from './tuple'
 export * from './union'
+export * from './tagged'
 
 export * from './schema'
 
