@@ -145,7 +145,7 @@ export function date() {
 }
 // tslint:enable:strict-type-predicates
 
-export async function validate<T>(value: unknown, type: Type<T>, validator?: Validator<Exclude<T, undefined>>, opts: DecoderOpts = {}): Promise<Result<undefined, RTError>> {
+export async function validateOrig<T>(value: unknown, type: Type<T>, validator?: Validator<Exclude<T, undefined>>, opts: DecoderOpts = {}): Promise<Result<undefined, RTError>> {
 	const decoded = type.decode(value, {})
 	if (isOk(decoded)) {
 		if (decoded.ok !== undefined && validator) {

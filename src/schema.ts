@@ -1,7 +1,7 @@
 import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
 import { Type, DecoderOpts, RTError, error } from './type'
 import * as t from './index'
-import { Validator, validate } from './validator'
+import { Validator, validateOrig } from './validator'
 
 export interface FieldType<T> {
 	ts: t.Type<T>
@@ -705,8 +705,8 @@ export async function validateSchema<T, KEYS extends keyof T, GK extends KEYS>(
 			let res: Result<any, RTError> = prop.type.ts.decode(v, decoderOpts)
 
 			if (isOk(res)) {
-				if (prop.type && prop.type.valid) res = await validate(state[name], prop.type.ts, prop.type.valid)
-				if (prop.type && isOk(res) && prop.valid) res = await validate(state[name], prop.type.ts, prop.valid)
+				if (prop.type && prop.type.valid) res = await validateOrig(state[name], prop.type.ts, prop.type.valid)
+				if (prop.type && isOk(res) && prop.valid) res = await validateOrig(state[name], prop.type.ts, prop.valid)
 
 				if (isErr(res)) errors.push(...res.err.map(error => ({ path: [name, ...error.path], error: error.error })))
 			}

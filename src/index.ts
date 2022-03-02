@@ -17,7 +17,7 @@ export * from './tagged'
 
 export * from './schema'
 
-//export { validate } from './validator'
+export { validateOrig } from './validator'
 //export type { Validator } from './validator'
 
 // vim: ts=4
