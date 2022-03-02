@@ -20,7 +20,7 @@ describe('test complex types', () => {
 				t.tuple(
 					t.string,
 					t.union(
-						t.boolean, t.nullable(t.number)
+						t.boolean, t.nullable(t.number.between(0, 100))
 					)
 				)
 			)
@@ -119,6 +119,41 @@ describe('test complex types', () => {
 					]
 				]
 			}))
+		})
+
+		it('should accept deep between() validator', async () => {
+			expect(await t.validate(tComplex, {
+				s: 'string',
+				n: 42,
+				a: [
+					[
+						'string',
+						42
+					]
+				]
+			})).toEqual(t.ok({
+				s: 'string',
+				n: 42,
+				a: [
+					[
+						'string',
+						42
+					]
+				]
+			}))
+		})
+
+		it('should reject deep between() validator', async () => {
+			expect(await t.validate(tComplex, {
+				s: 'string',
+				n: 42,
+				a: [
+					[
+						'string',
+						142
+					]
+				]
+			})).toBeErr()
 		})
 	})
 })

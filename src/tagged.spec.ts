@@ -10,7 +10,8 @@ declare global {
 }
 
 describe('test tagged union type', () => {
-	const tTaggedUnion = t.taggedUnion('type', {
+	//const tTaggedUnion = t.taggedUnion('type', {
+	const tTaggedUnion = t.taggedUnion('type')({
 		num: t.struct({
 			type: t.literal('num'),
 			n: t.number
@@ -19,7 +20,7 @@ describe('test tagged union type', () => {
 			type: t.literal('str'),
 			s: t.string
 		})
-	})
+	}).addValidator(v => v.type == 'num' ? t.ok(v) : t.error('error'))
 	type TaggedUnion = t.TypeOf<typeof tTaggedUnion>
 
 	// These are compile time tests for the TS type inference :)
@@ -47,6 +48,15 @@ describe('test tagged union type', () => {
 
 	it('should print type', () => {
 		expect(tTaggedUnion.print()).toBe('{ type: "num", n: number } | { type: "str", s: string }')
+	})
+
+	// validator
+	it('should accept valid', async () => {
+		expect(await t.validate(tTaggedUnion, { type: 'num', n: 42 })).toEqual(t.ok({ type: 'num', n: 42 }))
+	})
+
+	it('should reject in()', async () => {
+		expect(await t.validate(tTaggedUnion, { type: 'str', s: '' })).toBeErr()
 	})
 })
 

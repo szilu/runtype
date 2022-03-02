@@ -1,5 +1,5 @@
-import { Result, ok, err, isOk, RequiredKeys, OptionalKeys } from './utils'
-import { Type, DecoderOpts, DecoderError, decoderError } from './type'
+import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
+import { Type, DecoderOpts, RTError, error } from './type'
 
 // Struct //
 ////////////
@@ -23,7 +23,7 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 	}
 
 	checkExtraFields(struct: Record<keyof T, unknown>, opts: DecoderOpts) {
-		let errors: DecoderError = []
+		let errors: RTError = []
 
 		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
 		for (const p of Object.getOwnPropertyNames(struct)) {
@@ -36,15 +36,15 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 	decode(u: unknown, opts: DecoderOpts): Result<
 		{ [K in RequiredKeys<T>]: T[K] }
 		& { [K in OptionalKeys<T>]?: T[K] },
-		DecoderError
+		RTError
 	> {
 		if (typeof u !== 'object' || u === null) {
-			return decoderError([], 'expected object')
+			return error('expected object')
 		}
 
 		const ret: { [K in keyof T]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
 		const struct: Record<keyof T, unknown> = u as any
-		let errors: DecoderError = []
+		let errors: RTError = []
 
 		// decode fields
 		for (const p in this.props) {
@@ -61,6 +61,19 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 		//if (errors.length) return err(errors.join('\n'))
 		if (errors.length) return err(errors)
 		return ok(ret as { [K in keyof T]: T[K] })
+	}
+
+	async validate(v: T, opts: DecoderOpts) {
+		const struct: T = v as any
+		let errors: RTError = []
+		for (const p in this.props) {
+			const res = await this.props[p].validate(struct[p], opts)
+			if (isErr(res)) {
+				errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
+			}
+		}
+		if (errors.length) return err(errors)
+		return this.validateBase(v, opts)
 	}
 }
 

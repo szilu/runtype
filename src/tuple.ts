@@ -1,5 +1,5 @@
-import { Result, ok, err, isOk } from './utils'
-import { Type, DecoderOpts, DecoderError, decoderError } from './type'
+import { Result, ok, err, isOk, isErr } from './utils'
+import { Type, DecoderOpts, RTError, error } from './type'
 
 // Tuple //
 ///////////
@@ -18,13 +18,13 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 
 	decode(u: unknown, opts: DecoderOpts) {
 		const ret: { -readonly [K in number]?: A[K] } = []
-		let errors: DecoderError = []
+		let errors: RTError = []
 
 		if (!Array.isArray(u)) {
-			return decoderError([], 'expected Array')
+			return error('expected Array')
 		}
 		if (u.length !== this.memberTypes.length) {
-			return decoderError([], 'missing fields in Tuple')
+			return error(`tuple length must be ${this.memberTypes.length}`)
 		}
 
 		for (let i = 0; i < u.length; i++) {
@@ -39,6 +39,18 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 		//if (errors.length) return err(errors.join('\n'))
 		if (errors.length) return err(errors)
 		return ok(ret as A)
+	}
+
+	async validate(v: A, opts: DecoderOpts) {
+		let errors: RTError = []
+		for (let i = 0; i < v.length; i++) {
+			const res = await this.memberTypes[i].validate(v[i], opts)
+			if (isErr(res)) {
+				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+			}
+		}
+		if (errors.length) return err(errors)
+		return this.validateBase(v, opts)
 	}
 }
 

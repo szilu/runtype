@@ -1,5 +1,5 @@
 import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
-import { Type, DecoderOpts, DecoderError, decoderError } from './type'
+import { Type, DecoderOpts, RTError, error } from './type'
 import * as t from './index'
 import { Validator, validate } from './validator'
 
@@ -101,7 +101,7 @@ export class SchemaStrictType<T, KEYS extends keyof T, GK extends KEYS> extends 
 	}
 
 	checkExtraFields(struct: Record<keyof T, unknown>, opts: DecoderOpts) {
-		let errors: DecoderError = []
+		let errors: RTError = []
 
 		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
 		for (const p of Object.getOwnPropertyNames(struct)) {
@@ -110,14 +110,14 @@ export class SchemaStrictType<T, KEYS extends keyof T, GK extends KEYS> extends 
 		return errors
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<StrictTypeOf<Schema<T, KEYS, GK>>, DecoderError> {
+	decode(u: unknown, opts: DecoderOpts): Result<StrictTypeOf<Schema<T, KEYS, GK>>, RTError> {
 		if (typeof u !== 'object' || u === null) {
-			return decoderError([], 'expected object')
+			return error('expected object')
 		}
 
 		const ret: { [K in keyof T]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
 		const struct: Record<keyof T, unknown> = u as any
-		let errors: DecoderError = []
+		let errors: RTError = []
 		const props = this.schema.props
 
 		// decode fields
@@ -143,6 +143,23 @@ export class SchemaStrictType<T, KEYS extends keyof T, GK extends KEYS> extends 
 		errors.splice(-1, 0, ...this.checkExtraFields(struct, opts))
 		if (errors.length) return err(errors)
 		return ok(ret as { [K in keyof T]: T[K] })
+	}
+
+	async validate(v: StrictTypeOf<Schema<T, KEYS, GK>>, opts: DecoderOpts) {
+		const struct: T = v as any
+		let errors: RTError = []
+		const props = this.schema.props
+		for (const p in props) {
+			const prop = props[p]
+			if (prop.type) {
+				const res = await prop.type.ts.validate(struct[p], opts)
+				if (isErr(res)) {
+					errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
+				}
+			}
+		}
+		if (errors.length) return err(errors)
+		return ok(v)
 	}
 }
 
@@ -186,7 +203,7 @@ export class SchemaPartialType<T, KEYS extends keyof T, GK extends KEYS> extends
 	}
 
 	checkExtraFields(struct: Record<keyof T, unknown>, opts: DecoderOpts) {
-		let errors: DecoderError = []
+		let errors: RTError = []
 
 		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
 		for (const p of Object.getOwnPropertyNames(struct)) {
@@ -195,14 +212,14 @@ export class SchemaPartialType<T, KEYS extends keyof T, GK extends KEYS> extends
 		return errors
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<PartialTypeOf<Schema<T, KEYS, GK>>, DecoderError> {
+	decode(u: unknown, opts: DecoderOpts): Result<PartialTypeOf<Schema<T, KEYS, GK>>, RTError> {
 		if (typeof u !== 'object' || u === null) {
-			return decoderError([], 'expected object')
+			return error('expected object')
 		}
 
 		const ret: { [K in keyof T]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
 		const struct: Record<keyof T, unknown> = u as any
-		let errors: DecoderError = []
+		let errors: RTError = []
 		const props = this.schema.props
 
 		// decode fields
@@ -228,6 +245,24 @@ export class SchemaPartialType<T, KEYS extends keyof T, GK extends KEYS> extends
 		errors.splice(-1, 0, ...this.checkExtraFields(struct, opts))
 		if (errors.length) return err(errors)
 		return ok(ret as { [K in keyof T]?: T[K] })
+	}
+
+	async validate(v: PartialTypeOf<Schema<T, KEYS, GK>>, opts: DecoderOpts) {
+		// validate fields
+		const struct: T = v as any
+		let errors: RTError = []
+		const props = this.schema.props
+		for (const p in props) {
+			const prop = props[p]
+			if (prop.type && struct[p] !== undefined) {
+				const res = await prop.type.ts.validate(struct[p], opts)
+				if (isErr(res)) {
+					errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
+				}
+			}
+		}
+		if (errors.length) return err(errors)
+		return ok(v)
 	}
 }
 
@@ -263,7 +298,7 @@ export class SchemaPatchType<T, KEYS extends keyof T, GK extends KEYS> extends T
 	}
 
 	checkExtraFields(struct: Record<keyof T, unknown>, opts: DecoderOpts) {
-		let errors: DecoderError = []
+		let errors: RTError = []
 
 		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
 		for (const p of Object.getOwnPropertyNames(struct)) {
@@ -272,14 +307,14 @@ export class SchemaPatchType<T, KEYS extends keyof T, GK extends KEYS> extends T
 		return errors
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<PatchTypeOf<Schema<T, KEYS, GK>>, DecoderError> {
+	decode(u: unknown, opts: DecoderOpts): Result<PatchTypeOf<Schema<T, KEYS, GK>>, RTError> {
 		if (typeof u !== 'object' || u === null) {
-			return decoderError([], 'expected object')
+			return error('expected object')
 		}
 
 		const ret: { [K in keyof T]?: T[K] | null } = opts.unknownFields === 'discard' ? { ...u } : {}
 		const struct: Record<keyof T, unknown> = u as any
-		let errors: DecoderError = []
+		let errors: RTError = []
 		const props = this.schema.props
 
 		// decode fields
@@ -318,6 +353,23 @@ export class SchemaPatchType<T, KEYS extends keyof T, GK extends KEYS> extends T
 		if (errors.length) return err(errors)
 		return ok(ret as { [K in keyof T]: T[K] })
 	}
+
+	async validate(v: PatchTypeOf<Schema<T, KEYS, GK>>, opts: DecoderOpts) {
+		const struct: T = v as any
+		let errors: RTError = []
+		const props = this.schema.props
+		for (const p in props) {
+			const prop = props[p]
+			if (prop.type && struct[p] != null) {
+				const res = await prop.type.ts.validate(struct[p], opts)
+				if (isErr(res)) {
+					errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
+				}
+			}
+		}
+		if (errors.length) return err(errors)
+		return ok(v)
+	}
 }
 
 export function schemaPatch<T, KEYS extends keyof T, GK extends KEYS>(schema: Schema<T, KEYS, GK>): SchemaPatchType<T, KEYS, GK> {
@@ -351,7 +403,7 @@ export class SchemaPostType<T, KEYS extends keyof T, GK extends KEYS> extends Ty
 	}
 
 	checkExtraFields(struct: Record<keyof T, unknown>, opts: DecoderOpts) {
-		let errors: DecoderError = []
+		let errors: RTError = []
 
 		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
 		for (const p of Object.getOwnPropertyNames(struct)) {
@@ -360,14 +412,14 @@ export class SchemaPostType<T, KEYS extends keyof T, GK extends KEYS> extends Ty
 		return errors
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<PostTypeOf<Schema<T, KEYS, GK>>, DecoderError> {
+	decode(u: unknown, opts: DecoderOpts): Result<PostTypeOf<Schema<T, KEYS, GK>>, RTError> {
 		if (typeof u !== 'object' || u === null) {
-			return decoderError([], 'expected object')
+			return error('expected object')
 		}
 
 		const ret: { [K in keyof T]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
 		const struct: Record<keyof T, unknown> = u as any
-		let errors: DecoderError = []
+		let errors: RTError = []
 		const props = this.schema.props
 
 		// decode fields
@@ -395,6 +447,23 @@ export class SchemaPostType<T, KEYS extends keyof T, GK extends KEYS> extends Ty
 		errors.splice(-1, 0, ...this.checkExtraFields(struct, opts))
 		if (errors.length) return err(errors)
 		return ok(ret as { [K in keyof T]: T[K] })
+	}
+
+	async validate(v: PostTypeOf<Schema<T, KEYS, GK>>, opts: DecoderOpts) {
+		const struct: T = v as any
+		let errors: RTError = []
+		const props = this.schema.props
+		for (const p in props) {
+			const prop = props[p]
+			if (prop.type) {
+				const res = await prop.type.ts.validate(struct[p], opts)
+				if (isErr(res)) {
+					errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
+				}
+			}
+		}
+		if (errors.length) return err(errors)
+		return ok(v)
 	}
 }
 
@@ -430,7 +499,7 @@ export class SchemaPostPartialType<T, KEYS extends keyof T, GK extends KEYS> ext
 	}
 
 	checkExtraFields(struct: Record<keyof T, unknown>, opts: DecoderOpts) {
-		let errors: DecoderError = []
+		let errors: RTError = []
 
 		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
 		for (const p of Object.getOwnPropertyNames(struct)) {
@@ -439,14 +508,14 @@ export class SchemaPostPartialType<T, KEYS extends keyof T, GK extends KEYS> ext
 		return errors
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<PostPartialTypeOf<Schema<T, KEYS, GK>>, DecoderError> {
+	decode(u: unknown, opts: DecoderOpts): Result<PostPartialTypeOf<Schema<T, KEYS, GK>>, RTError> {
 		if (typeof u !== 'object' || u === null) {
-			return decoderError([], 'expected object')
+			return error('expected object')
 		}
 
 		const ret: { [K in keyof T]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
 		const struct: Record<keyof T, unknown> = u as any
-		let errors: DecoderError = []
+		let errors: RTError = []
 		const props = this.schema.props
 
 		// decode fields
@@ -474,6 +543,23 @@ export class SchemaPostPartialType<T, KEYS extends keyof T, GK extends KEYS> ext
 		errors.splice(-1, 0, ...this.checkExtraFields(struct, opts))
 		if (errors.length) return err(errors)
 		return ok(ret as { [K in keyof T]?: T[K] })
+	}
+
+	async validate(v: PostPartialTypeOf<Schema<T, KEYS, GK>>, opts: DecoderOpts) {
+		const struct: T = v as any
+		let errors: RTError = []
+		const props = this.schema.props
+		for (const p in props) {
+			const prop = props[p]
+			if (prop.type) {
+				const res = await prop.type.ts.validate(struct[p], opts)
+				if (isErr(res)) {
+					errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
+				}
+			}
+		}
+		if (errors.length) return err(errors)
+		return ok(v)
 	}
 }
 
@@ -508,7 +594,7 @@ export class SchemaKeysType<T, KEYS extends keyof T, GK extends KEYS> extends Ty
 	}
 
 	checkExtraFields(struct: Record<KEYS, unknown>, opts: DecoderOpts) {
-		let errors: DecoderError = []
+		let errors: RTError = []
 
 		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
 		for (const p of Object.getOwnPropertyNames(struct)) {
@@ -517,14 +603,14 @@ export class SchemaKeysType<T, KEYS extends keyof T, GK extends KEYS> extends Ty
 		return errors
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<KeysTypeOf<Schema<T, KEYS, GK>>, DecoderError> {
+	decode(u: unknown, opts: DecoderOpts): Result<KeysTypeOf<Schema<T, KEYS, GK>>, RTError> {
 		if (typeof u !== 'object' || u === null) {
-			return decoderError([], 'expected object')
+			return error('expected object')
 		}
 
 		const ret: { [K in KEYS]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
 		const struct: Record<KEYS, unknown> = u as any
-		let errors: DecoderError = []
+		let errors: RTError = []
 		const props = this.schema.props
 
 		// decode fields
@@ -544,6 +630,23 @@ export class SchemaKeysType<T, KEYS extends keyof T, GK extends KEYS> extends Ty
 		if (errors.length) return err(errors)
 		return ok(ret as { [K in KEYS]: T[K] })
 	}
+
+	async validate(v: KeysTypeOf<Schema<T, KEYS, GK>>, opts: DecoderOpts) {
+		const struct: T = v as any
+		let errors: RTError = []
+		const props = this.schema.props
+		for (const p in props) {
+			const prop = props[p]
+			if (prop.type) {
+				const res = await prop.type.ts.validate(struct[p], opts)
+				if (isErr(res)) {
+					errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
+				}
+			}
+		}
+		if (errors.length) return err(errors)
+		return ok(v)
+	}
 }
 
 export function schemaKeys<T, KEYS extends keyof T, GK extends KEYS>(schema: Schema<T, KEYS, GK>): SchemaKeysType<T, KEYS, GK> {
@@ -558,13 +661,13 @@ export async function validateSchema<T, KEYS extends keyof T, GK extends KEYS>(
 	schema: Schema<T, KEYS, GK>,
 	tp: 'Strict' | 'Partial' | 'Patch' | 'Post' | 'PostPartial',
 	state: { [P in keyof T]?: unknown }
-): Promise<DecoderError | null> {
-	let errors: DecoderError = []
+): Promise<RTError | null> {
+	let errors: RTError = []
 
 	for (const name in schema.props) {
 		const prop = schema.props[name]
 		const v = state[name]
-		let res: Result<any, DecoderError> = ok(undefined)
+		let res: Result<any, RTError> = ok(undefined)
 
 		if (tp === 'Strict'
 		   || (tp === 'Partial' && v !== undefined)
@@ -590,16 +693,16 @@ export async function validateSchema<T, KEYS extends keyof T, GK extends KEYS>(
 	ts: Type<T>,
 	state: { [P in keyof T]?: unknown },
 	decoderOpts: DecoderOpts = {}
-): Promise<Result<T, DecoderError>> {
+): Promise<Result<T, RTError>> {
 	const decodeRes = ts.decode(state, decoderOpts)
-	let errors: DecoderError = isErr(decodeRes) ? decodeRes.err : []
+	let errors: RTError = isErr(decodeRes) ? decodeRes.err : []
 
 	for (const name in schema.props) {
 		const prop = schema.props[name]
 		const v = state[name]
-		//let res: Result<any, DecoderError> = ok(undefined)
+		//let res: Result<any, RTError> = ok(undefined)
 		if (prop.type) {
-			let res: Result<any, DecoderError> = prop.type.ts.decode(v, decoderOpts)
+			let res: Result<any, RTError> = prop.type.ts.decode(v, decoderOpts)
 
 			if (isOk(res)) {
 				if (prop.type && prop.type.valid) res = await validate(state[name], prop.type.ts, prop.type.valid)

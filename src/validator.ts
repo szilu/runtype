@@ -1,5 +1,5 @@
 import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
-import { Type, DecoderOpts, DecoderError, decoderError } from './type'
+import { Type, DecoderOpts, RTError, error } from './type'
 
 //////////////////////
 // Type definitions //
@@ -145,7 +145,7 @@ export function date() {
 }
 // tslint:enable:strict-type-predicates
 
-export async function validate<T>(value: unknown, type: Type<T>, validator?: Validator<Exclude<T, undefined>>, opts: DecoderOpts = {}): Promise<Result<undefined, DecoderError>> {
+export async function validate<T>(value: unknown, type: Type<T>, validator?: Validator<Exclude<T, undefined>>, opts: DecoderOpts = {}): Promise<Result<undefined, RTError>> {
 	const decoded = type.decode(value, {})
 	if (isOk(decoded)) {
 		if (decoded.ok !== undefined && validator) {
@@ -155,12 +155,12 @@ export async function validate<T>(value: unknown, type: Type<T>, validator?: Val
 			const valid = typeof validator === 'function'
 				? await validator(decoded.ok as Exclude<T, undefined>)
 				: await validator.validate(decoded.ok as Exclude<T, undefined>)
-			return isOk(valid) ? valid : decoderError([], valid.err)
+			return isOk(valid) ? valid : error(valid.err)
 		} else {
 			return ok(undefined)
 		}
 	}
-	return decoderError([], 'invalid type')
+	return error('invalid type')
 }
 
 // vim: ts=4

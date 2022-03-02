@@ -18,7 +18,6 @@ describe('test basic types', () => {
 		it('"undefined" should reject null', () => {
 			expect(t.decode(t.undefinedValue, null)).toBeErr()
 		})
-
 		it('"undefined" should reject 42', () => {
 			expect(t.decode(t.undefinedValue, 42)).toBeErr()
 		})
@@ -84,7 +83,7 @@ describe('test basic types', () => {
 		})
 
 		it('should print type', () => {
-			expect(t.any.print()).toBe('any')
+			expect(t.unknown.print()).toBe('unknown')
 		})
 	})
 
@@ -107,6 +106,69 @@ describe('test basic types', () => {
 
 		it('should print type', () => {
 			expect(t.string.print()).toBe('string')
+		})
+
+		// in()
+		it('should accept in()', async () => {
+			expect(await t.validate(t.string.in('a', 'b'), 'a')).toEqual(t.ok('a'))
+		})
+
+		it('should reject in()', async () => {
+			expect(await t.validate(t.string.in('a', 'b'), 'x')).toBeErr()
+		})
+
+		// length(num)
+		it('should accept length(num)', async () => {
+			expect(await t.validate(t.string.length(1), 'a')).toEqual(t.ok('a'))
+		})
+
+		it('should reject length(num)', async () => {
+			expect(await t.validate(t.string.length(2), 'a')).toBeErr()
+		})
+
+		// length(min, max))
+		it('should accept length(min, max)', async () => {
+			expect(await t.validate(t.string.length(0, 2), 'a')).toEqual(t.ok('a'))
+		})
+
+		it('should reject length(min, max)', async () => {
+			expect(await t.validate(t.string.length(2, 5), 'a')).toBeErr()
+		})
+
+		// minLength()
+		it('should accept minLength(num)', async () => {
+			expect(await t.validate(t.string.minLength(1), 'aa')).toEqual(t.ok('aa'))
+		})
+
+		it('should reject minLength(num)', async () => {
+			expect(await t.validate(t.string.minLength(3), 'aa')).toBeErr()
+		})
+
+		// maxLength()
+		it('should accept maxLength(num)', async () => {
+			expect(await t.validate(t.string.maxLength(3), 'aa')).toEqual(t.ok('aa'))
+		})
+
+		it('should reject maxLength(num)', async () => {
+			expect(await t.validate(t.string.maxLength(1), 'aa')).toBeErr()
+		})
+
+		// matches()
+		it('should accept matches()', async () => {
+			expect(await t.validate(t.string.matches(/^a$/), 'a')).toEqual(t.ok('a'))
+		})
+
+		it('should reject matches()', async () => {
+			expect(await t.validate(t.string.matches(/^a$/), 'aa')).toBeErr()
+		})
+
+		// email()
+		it('should accept email', async () => {
+			expect(await t.validate(t.string.email(), 'a@example.com')).toEqual(t.ok('a@example.com'))
+		})
+
+		it('should reject email', async () => {
+			expect(await t.validate(t.string.email(), 'a@a')).toBeErr()
 		})
 	})
 
@@ -138,6 +200,61 @@ describe('test basic types', () => {
 		it('should print type', () => {
 			expect(t.number.print()).toBe('number')
 		})
+
+		// in()
+		it('should accept in()', async () => {
+			expect(await t.validate(t.number.in(1, 2), 1)).toEqual(t.ok(1))
+		})
+
+		it('should reject in()', async () => {
+			expect(await t.validate(t.number.in(2, 3), 1)).toBeErr()
+		})
+
+		// integer()
+		it('should accept integer()', async () => {
+			expect(await t.validate(t.number.integer(), 1)).toEqual(t.ok(1))
+		})
+
+		it('should reject integer()', async () => {
+			expect(await t.validate(t.number.integer(), 1.2)).toBeErr()
+		})
+
+		// min()
+		it('should accept min()', async () => {
+			expect(await t.validate(t.number.min(1), 1)).toEqual(t.ok(1))
+		})
+
+		it('should reject min()', async () => {
+			expect(await t.validate(t.number.min(2), 1.2)).toBeErr()
+		})
+
+		// max()
+		it('should accept max()', async () => {
+			expect(await t.validate(t.number.max(3), 1)).toEqual(t.ok(1))
+		})
+
+		it('should reject max()', async () => {
+			expect(await t.validate(t.number.max(3), 5)).toBeErr()
+		})
+
+		// between()
+		it('should accept between()', async () => {
+			expect(await t.validate(t.number.between(0, 4), 1)).toEqual(t.ok(1))
+		})
+
+		it('should reject between()', async () => {
+			expect(await t.validate(t.number.between(0, 4), 5)).toBeErr()
+		})
+
+		// validator composition
+		it('should accept .min().max()', async () => {
+			expect(await t.validate(t.number.min(0).max(4), 1)).toEqual(t.ok(1))
+		})
+
+		it('should reject .min().max()', async () => {
+			expect(await t.validate(t.number.min(0).max(4), 5)).toBeErr()
+			expect(await t.validate(t.number.min(0).max(4), -5)).toBeErr()
+		})
 	})
 
 	describe('test integer type', () => {
@@ -159,6 +276,11 @@ describe('test basic types', () => {
 
 		it('should print type', () => {
 			expect(t.integer.print()).toBe('integer')
+		})
+
+		// between() inherited frrom number
+		it('should accept between()', async () => {
+			expect(await t.validate(t.integer.between(0, 4), 1)).toEqual(t.ok(1))
 		})
 	})
 
@@ -192,7 +314,7 @@ describe('test basic types', () => {
 		})
 	})
 
-	describe('test Date type', () => {
+	describe('test date type', () => {
 		it('should accept Date', () => {
 			const d = new Date()
 			expect(t.decode(t.date, d)).toEqual(t.ok(d))
@@ -265,6 +387,15 @@ describe('test basic types', () => {
 
 		it('should print type', () => {
 			expect(tLiteral.print()).toBe('true | 1 | 2 | "a" | "b"')
+		})
+
+		// in()
+		it('should accept in()', async () => {
+			expect(await t.validate(tLiteral.in('a', 'b'), 'a')).toEqual(t.ok('a'))
+		})
+
+		it('should reject in()', async () => {
+			expect(await t.validate(tLiteral.in('a', 'b'), 1)).toBeErr()
 		})
 	})
 })

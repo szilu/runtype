@@ -18,6 +18,37 @@ describe('test struct type', () => {
 	})
 	type Struct = t.TypeOf<typeof tStruct>
 
+	/*
+	const tS = t.struct({
+		a: t.union(
+			t.struct({
+				s: t.string
+			}),
+			t.struct({
+				n: t.number
+			})
+		),
+		v: t.array(t.tuple(t.integer, t.integer))
+	})
+
+	type TS = t.TypeOf<typeof tS>
+
+	const ts: TS = {
+		a: { s: '42', n: 42, x: 4 },
+		v: [[1, 2]]
+	}
+
+
+	type TS2 = {
+		a: { s: string } | { n: number }
+		v: [number, number][]
+	}
+	const ts2: TS = {
+		a: { s: '42', n: 42 },
+		v: [[1, 2]]
+	}
+	*/
+
 	// These are compile time tests for the TS type inference :)
 	const struct1: Struct = { s: 'string', n: 42, b: true }
 	const struct2: Struct = { s: 'string', n: 42 }
