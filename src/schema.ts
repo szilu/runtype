@@ -94,8 +94,8 @@ export class SchemaStrictType<T, KEYS extends keyof T, GK extends KEYS> extends 
 			+ (Object.keys(props) as (keyof T)[]).map(name => {
 				const prop = props[name]
 				return prop.type
-					? `${name}${isOk(prop.type.ts.decode(undefined, {})) ? '?' : ''}: ${prop.type.ts.print()}`
-					: `${name}${prop.optional ? '?' : ''}: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
+					? `${String(name)}${isOk(prop.type.ts.decode(undefined, {})) ? '?' : ''}: ${prop.type.ts.print()}`
+					: `${String(name)}${prop.optional ? '?' : ''}: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
 			}).join(', ')
 			+ ' }'
 	}
@@ -196,8 +196,8 @@ export class SchemaPartialType<T, KEYS extends keyof T, GK extends KEYS> extends
 			+ (Object.keys(props) as (keyof T)[]).map(name => {
 				const prop = props[name]
 				return prop.type
-					? `${name}?: ${prop.type.ts.print()}`
-					: `${name}?: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
+					? `${String(name)}?: ${prop.type.ts.print()}`
+					: `${String(name)}?: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
 			}).join(', ')
 			+ ' }'
 	}
@@ -291,8 +291,8 @@ export class SchemaPatchType<T, KEYS extends keyof T, GK extends KEYS> extends T
 			+ (Object.keys(props) as (keyof T)[]).map(name => {
 				const prop = props[name]
 				return prop.type
-					? `${name}?: ${prop.type.ts.print()}${isOk(prop.type.ts.decode(undefined, {})) ? ' | null' : ''}`
-					: `${name}?: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
+					? `${String(name)}?: ${prop.type.ts.print()}${isOk(prop.type.ts.decode(undefined, {})) ? ' | null' : ''}`
+					: `${String(name)}?: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
 			}).join(', ')
 			+ ' }'
 	}
@@ -396,8 +396,8 @@ export class SchemaPostType<T, KEYS extends keyof T, GK extends KEYS> extends Ty
 			+ (Object.keys(props) as (keyof T)[]).filter(name => name !== this.schema.genKey).map(name => {
 				const prop = props[name]
 				return prop.type
-					? `${name}${isOk(prop.type.ts.decode(undefined, {})) ? '?' : ''}: ${prop.type.ts.print()}`
-					: `${name}${prop.optional ? '?' : ''}: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
+					? `${String(name)}${isOk(prop.type.ts.decode(undefined, {})) ? '?' : ''}: ${prop.type.ts.print()}`
+					: `${String(name)}${prop.optional ? '?' : ''}: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
 			}).join(', ')
 			+ ' }'
 	}
@@ -492,8 +492,8 @@ export class SchemaPostPartialType<T, KEYS extends keyof T, GK extends KEYS> ext
 			+ (Object.keys(props) as (keyof T)[]).filter(name => name !== this.schema.genKey).map(name => {
 				const prop = props[name]
 				return prop.type
-					? `${name}?: ${prop.type.ts.print()}`
-					: `${name}?: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
+					? `${String(name)}?: ${prop.type.ts.print()}`
+					: `${String(name)}?: ${schemaStrict(prop.schema).print()}${prop.multiple ? '[]' : ''}`
 			}).join(', ')
 			+ ' }'
 	}
@@ -587,7 +587,7 @@ export class SchemaKeysType<T, KEYS extends keyof T, GK extends KEYS> extends Ty
 			+ this.schema.keys.map(name => {
 				const prop = props[name]
 				return prop.type
-					? `${name}: ${prop.type.ts.print()}`
+					? `${String(name)}: ${prop.type.ts.print()}`
 					: ''
 			}).join(', ')
 			+ ' }'
@@ -621,7 +621,7 @@ export class SchemaKeysType<T, KEYS extends keyof T, GK extends KEYS> extends Ty
 				if (isOk(res)) {
 					ret[p] = res.ok
 				} else {
-					errors.push(...res.err.map(error => ({ path: ['' + p, ...error.path], error: error.error })))
+					errors.push(...res.err.map(error => ({ path: ['' + String(p), ...error.path], error: error.error })))
 				}
 			}
 		}

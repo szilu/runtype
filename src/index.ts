@@ -15,6 +15,8 @@ export * from './tuple'
 export * from './union'
 export * from './tagged'
 
+export * from './keyof'
+
 export * from './schema'
 
 export { validateOrig } from './validator'

@@ -17,7 +17,7 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 	print() {
 		return '{ '
 			+ (Object.keys(this.props) as (keyof T)[]).map(name =>
-				`${name}${isOk(this.props[name].decode(undefined, {})) ? '?' : ''}: ${this.props[name].print()}`
+				`${String(name)}${isOk(this.props[name].decode(undefined, {})) ? '?' : ''}: ${this.props[name].print()}`
 			).join(', ')
 			+ ' }'
 	}
