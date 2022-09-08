@@ -10,6 +10,7 @@ export * from './optional'
 export * from './nullable'
 
 export * from './array'
+export * from './record'
 export * from './struct'
 export * from './tuple'
 export * from './union'
