@@ -1,15 +1,13 @@
 {
 	"compilerOptions": {
-		"module": "ES6",
-		"moduleResolution": "node",
-		"outDir": "esm",
-
-		"target": "es6",
+		"module": "CommonJS",
+		"target": "es2020",
 		"esModuleInterop": true,
+		"strict": true,
 		"declaration": true,
 		"jsx": "react",
-		"strict": true,
-		"baseUrl": "."
+
+		"outDir": "lib"
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "**/*.local.ts", "**/*.spec.ts"]

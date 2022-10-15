@@ -1,10 +1,11 @@
 import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
 import { Type, DecoderOpts, RTError, error } from './type'
-import * as t from './index'
+import { array } from './array'
+import { unknownObject } from './scalar'
 import { Validator, validateOrig } from './validator'
 
 export interface FieldType<T> {
-	ts: t.Type<T>
+	ts: Type<T>
 	valid?: Validator<Exclude<T, undefined>>
 }
 
@@ -28,9 +29,9 @@ interface SubSchema<T> /*extends FieldDesc<T>*/ {
 function decodeSubSchema(u: unknown, optional: boolean = false, multiple: boolean = false) {
 	if (optional && u === undefined) return ok(undefined)
 	if (multiple) {
-		return t.array(t.unknownObject).decode(u, {})
+		return array(unknownObject).decode(u, {})
 	} else {
-		return t.unknownObject.decode(u, {})
+		return unknownObject.decode(u, {})
 	}
 }
 
