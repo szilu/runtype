@@ -1,5 +1,6 @@
 import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
 import { Type, DecoderOpts, RTError, error } from './type'
+import { optional } from './optional'
 
 // Struct //
 ////////////
@@ -79,6 +80,15 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 
 export function struct<T extends { [K: string]: unknown }>(props: { [K in keyof T]: Type<T[K]> }): StructType<T> {
 	return new StructType(props)
+}
+
+export function partial<T extends { [K: string]: unknown }>(strct: StructType<T>): StructType<Partial<T>> {
+	const partialProps: { [K in keyof T]?: Type<T[K] | undefined> } = {} 
+	for (const p in strct.props) {
+		const type = strct.props[p] as any
+		if (type) partialProps[p] = isOk(type.decode(undefined, {})) ? type : optional(type)
+	}
+	return struct(partialProps as any) as StructType<Partial<T>>
 }
 
 // FIXME: deprecated, remove later
