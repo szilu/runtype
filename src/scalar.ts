@@ -173,6 +173,14 @@ class BooleanType extends Type<boolean> {
 	async validate(v: boolean, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
 	}
+
+	true() {
+		return this.addValidator((v: boolean) => v ? ok(v) : error('must be true'))
+	}
+
+	false() {
+		return this.addValidator((v: boolean) => !v ? ok(v) : error('must be false'))
+	}
 }
 export const boolean = new BooleanType()
 
