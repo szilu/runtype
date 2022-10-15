@@ -13,11 +13,11 @@ describe('test tagged union type', () => {
 	//const tTaggedUnion = t.taggedUnion('type', {
 	const tTaggedUnion = t.taggedUnion('type')({
 		num: t.struct({
-			type: t.literal('num'),
+			type: t.literal<['num']>('num'),
 			n: t.number
 		}),
 		str: t.struct({
-			type: t.literal('str'),
+			type: t.literal<['str']>('str'),
 			s: t.string
 		})
 	}).addValidator(v => v.type == 'num' ? t.ok(v) : t.error('error'))
