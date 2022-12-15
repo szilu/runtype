@@ -76,16 +76,16 @@ const value: MyType = decoded.ok
 | date         | date                                                 | T.date           |
 | any          | any                                                  | T.any            |
 | unknown      | unknown                                              | T.unknown        |
-| literal      | `'a' | 'b' | 3`                                      | `T.literal('a', 'b', 3)` |
-| optional     | `Type | undefined`                                   | `T.optional(tType)` |
-| nullable     | `Type | null | undefined`                            | `T.nullable(tType)` |
+| literal      | `'a' \| 'b' \| 3`                                      | `T.literal('a', 'b', 3)` |
+| optional     | `Type \| undefined`                                   | `T.optional(tType)` |
+| nullable     | `Type \| null \| undefined`                            | `T.nullable(tType)` |
 | array        | `Array<Type>`                                        | `T.array(tType)` |
 | record       | `record<string, Type>`                               | `T.record(tType)` |
 | struct       | `{ s: string, n: number }`                           | `T.struct({ s: T.string, n: T.number })` |
 | key of       | `keyof { s: string, n: number }`                     | `T.keyof(T.struct({ s: T.string, n: T.number }))` |
 | tuple        | `[string, number, Type]`                             | `T.tuple(T.string, T.number, tType)` |
-| union        | `string | number | Type`                             | `T.union(T.string, T.number, tType)` |
-| tagged union | `{ tag: 's', s: string } | { tag: 'n', n: number }`  | `T.taggedUnion('tag')({ tag: T.literal('s'), s: T.string }, { tag: T.literal('n'), n: T.number })` |
+| union        | `string \| number \| Type`                             | `T.union(T.string, T.number, tType)` |
+| tagged union | `{ tag: 's', s: string } \| { tag: 'n', n: number }`  | `T.taggedUnion('tag')({ tag: T.literal('s'), s: T.string }, { tag: T.literal('n'), n: T.number })` |
 
 ### Decoder options
 
@@ -112,7 +112,7 @@ All available coercion options:
 | coerceDate              | boolean | = coerceStringToDate, coerceNumberToDate |
 | coerceAll               | boolean | All the above coercion |
 | acceptNaN               | boolean | Make T.number accept NaN as number |
-| unknownFields           | `'reject' | 'drop' | 'discard'` | How to treat unknown fields. (_reject_: error, _drop_: drops unknown fields from the output, _discard_: leaves in output as is) |
+| unknownFields           | `'reject' \| 'drop' \| 'discard'` | How to treat unknown fields. (_reject_: error, _drop_: drops unknown fields from the output, _discard_: leaves in output as is) |
 
 ### Validation
 
