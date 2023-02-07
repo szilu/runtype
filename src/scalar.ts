@@ -101,7 +101,9 @@ class NumberType extends Type<number> {
 			case 'number': if (opts.acceptNaN || !Number.isNaN(u)) {
 				return ok(u)
 			} else break
-			case 'string': if (opts.coerceStringToNumber || opts.coerceScalar || opts.coerceAll) return ok(+u)
+			case 'string': if (opts.coerceStringToNumber || opts.coerceScalar || opts.coerceAll) {
+				if (opts.acceptNaN || !Number.isNaN(+u)) return ok(+u)
+			}
 		}
 		return error('expected number')
 	}
