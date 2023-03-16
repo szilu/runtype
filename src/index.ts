@@ -14,6 +14,7 @@ export * from './record'
 export * from './struct'
 export * from './tuple'
 export * from './union'
+export * from './intersection'
 export * from './tagged'
 
 export * from './keyof'
