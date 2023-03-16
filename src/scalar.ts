@@ -28,8 +28,8 @@ class ConstantType<T> extends Type<T> {
 
 export const undefinedValue = new ConstantType(undefined)
 export const nullValue = new ConstantType(null)
-export const trueValue = new ConstantType(true)
-export const falseValue = new ConstantType(false)
+export const trueValue = new ConstantType<true>(true)
+export const falseValue = new ConstantType<false>(false)
 
 // String //
 ////////////
@@ -142,7 +142,6 @@ export const number = new NumberType()
 
 // Integer //
 /////////////
-//class IntegerType extends Type<number> {
 class IntegerType extends NumberType {
 	print() {
 		return 'integer'
@@ -300,7 +299,6 @@ class LiteralType<T extends ReadonlyArray<Scalar>> extends Type<T[number]> {
 	}
 
 	// Validators
-	//in(...list: Scalar[]) {
 	in(...list: T[number][]) {
 		return this.addValidator((v: Scalar) => list.indexOf(v) >= 0 ? ok(v)
 			: error(`must be one of [${list.map(l => JSON.stringify(l)).join(',')}]`))
