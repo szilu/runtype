@@ -166,7 +166,7 @@ describe('test schema type', () => {
 
 		it('should print subschema', () => {
 			//expect(tStrictSub.print()).toBe('{ k: integer, n: number, b?: boolean | undefined, sub: { ik: integer, sk: string, n: number, b?: boolean | undefined }, submul: { ik: integer, sk: string, n: number, b?: boolean | undefined }[], optsub?: { ik: integer, sk: string, n: number, b?: boolean | undefined }, optsubmul?: { ik: integer, sk: string, n: number, b?: boolean | undefined }[] }')
-			expect(tStrictSub.print()).toBe('{ k: integer, n: number, b?: boolean | undefined, deep?: { a: [number, string][] } | undefined | null | undefined, sub: { ik: integer, sk: string, n: number, b?: boolean | undefined }, submul: { ik: integer, sk: string, n: number, b?: boolean | undefined }[], optsub?: { ik: integer, sk: string, n: number, b?: boolean | undefined }, optsubmul?: { ik: integer, sk: string, n: number, b?: boolean | undefined }[] }')
+			expect(tStrictSub.print()).toBe('{ k: integer, n: number, b?: boolean | undefined, deep?: { a: [number, string][] } | undefined | null, sub: { ik: integer, sk: string, n: number, b?: boolean | undefined }, submul: { ik: integer, sk: string, n: number, b?: boolean | undefined }[], optsub?: { ik: integer, sk: string, n: number, b?: boolean | undefined }, optsubmul?: { ik: integer, sk: string, n: number, b?: boolean | undefined }[] }')
 		})
 	})
 
@@ -436,7 +436,7 @@ describe('test schema type', () => {
 				{ name: 'k', type: 'integer', desc: '' },
 				{ name: 'n', type: 'number', desc: '' },
 				{ name: 'b', type: 'boolean | undefined', desc: '' },
-				{ name: 'deep', type: '{ a: [number, string][] } | undefined | null | undefined', desc: '' },
+				{ name: 'deep', type: '{ a: [number, string][] } | undefined | null', desc: '' },
 				{
 					name: 'sub',
 					schema: [
