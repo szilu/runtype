@@ -117,7 +117,7 @@ const tStruct = T.struct({
 // = { s: string, n?: number }
 
 const tPatchType = T.patch(tStruct)
-// = { s?: string, n?: number \| null }
+// = { s?: string, n?: number | null }
 ```
 
 ### Decoder options
