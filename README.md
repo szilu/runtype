@@ -59,9 +59,7 @@ const value: MyType = decoded.ok
 // = { s: 'string', n: 42 }
 ```
 
-
-```typescript
-```
+### Type constructors
 
 | Type | TypeScript | RunType |
 | ---- | ---------- | ------- |
@@ -85,7 +83,42 @@ const value: MyType = decoded.ok
 | key of       | `keyof { s: string, n: number }`                     | `T.keyof(T.struct({ s: T.string, n: T.number }))` |
 | tuple        | `[string, number, Type]`                             | `T.tuple(T.string, T.number, tType)` |
 | union        | `string \| number \| Type`                             | `T.union(T.string, T.number, tType)` |
+| intersect    | `boolean \| true`                                     | `T.union(T.boolean, T.trueValue)` |
+| intersect    | `{ s: string } & { n: number }`                      | `T.intersect(T.struct({ s: T.string }), T.struct({ n: T.number }))` |
 | tagged union | `{ tag: 's', s: string } \| { tag: 'n', n: number }`  | `T.taggedUnion('tag')({ tag: T.literal('s'), s: T.string }, { tag: T.literal('n'), n: T.number })` |
+
+### Type modifiers
+
+#### Partial
+
+The __T.partial()__ type modifier takes a __Struct__ type and converts all fields to optional:
+
+```typescript
+const tStruct = T.struct({
+	s: T.string,
+	n: T.optional(T.number)
+})
+// = { s: string, n?: number }
+
+const tPartialType = T.partial(tStruct)
+// = { s?: string, n?: number }
+```
+
+#### Patch
+
+The __T.patch()__ type modifier takes a __Struct__ type and converts all *optional* fields to *nullable* and all *requires* fields to *optional*.
+It is useful for update APIs, where *undefined* or missing fields mean not to update and *null* value means to clear that field.
+
+```typescript
+const tStruct = T.struct({
+	s: T.string,
+	n: T.optional(T.number)
+})
+// = { s: string, n?: number }
+
+const tPatchType = T.patch(tStruct)
+// = { s?: string, n?: number \| null }
+```
 
 ### Decoder options
 
@@ -121,7 +154,7 @@ Runtype also handles data validation, what is defined as an asynchron function. 
 
 ```typescript
 const tMyType = struct({
-	s: t.string.minLength(2)
+	s: T.string.minLength(2)
 })
 ```
 
@@ -201,25 +234,25 @@ interface Person {
 In IO-TS you can create it like this:
 
 ```typescript
-const tPerson = t.intersection([
-	t.type({
-		name: t.string
+const tPerson = T.intersection([
+	T.type({
+		name: T.string
 	}),
-	t.partial({
-		age: t.number
+	T.partial({
+		age: T.number
 	})
-type Person = t.TypeOf<typeof tPerson>
+type Person = T.TypeOf<typeof tPerson>
 ])
 ```
 
 *RunType* uses complex TypeScript mechanisms to achieve a simpler and readable syntax:
 
 ```typescript
-const tPerson = t.struct({
-	name: t.string
-	age: t.optional(t.number)
+const tPerson = T.struct({
+	name: T.string
+	age: T.optional(T.number)
 ])
-type Person = t.TypeOf<typeof tPerson>
+type Person = T.TypeOf<typeof tPerson>
 ```
 
 Under the hood RunType generates the same intersection type beacause of limitations in TypeScipt, but it works the same as the original type:
