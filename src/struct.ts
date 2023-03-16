@@ -1,6 +1,7 @@
 import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
 import { Type, DecoderOpts, RTError, error } from './type'
 import { optional } from './optional'
+import { nullable } from './nullable'
 
 // Struct //
 ////////////
@@ -82,13 +83,29 @@ export function struct<T extends { [K: string]: unknown }>(props: { [K in keyof 
 	return new StructType(props)
 }
 
+// Partial //
+/////////////
 export function partial<T extends { [K: string]: unknown }>(strct: StructType<T>): StructType<Partial<T>> {
-	const partialProps: { [K in keyof T]?: Type<T[K] | undefined> } = {} 
+	const partialProps: { [K in keyof T]?: Type<T[K] | undefined> } = {}
 	for (const p in strct.props) {
 		const type = strct.props[p] as any
 		if (type) partialProps[p] = isOk(type.decode(undefined, {})) ? type : optional(type)
 	}
 	return struct(partialProps as any) as StructType<Partial<T>>
+}
+
+// Patch //
+///////////
+export type PatchField<T> = T extends undefined ? T | null : T | undefined
+export type PatchStruct<T extends { [K: string]: unknown }> = { [K in keyof T]: PatchField<T[K]> }
+
+export function patch<T extends { [K: string]: unknown }>(strct: StructType<T>): StructType<PatchStruct<T>> {
+	const patchProps: { [K in keyof T]?: PatchField<Type<T[K]>> } = {}
+	for (const p in strct.props) {
+		const type = strct.props[p] as any
+		if (type) patchProps[p] = isOk(type.decode(undefined, {})) ? nullable(type) : optional(type) as any
+	}
+	return struct(patchProps as any) as StructType<PatchStruct<T>>
 }
 
 // FIXME: deprecated, remove later

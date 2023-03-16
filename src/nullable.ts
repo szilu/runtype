@@ -12,7 +12,9 @@ class NullableType<T> extends Type<T | null | undefined> {
 	}
 
 	print() {
-		return this.type.print() + ' | null | undefined'
+		return this.type.print()
+			+ (isOk(this.type.decode(null, {})) ? '' : ' | null')
+			+ (isOk(this.type.decode(undefined, {})) ? '' : ' | undefined')
 	}
 
 	decode(u: unknown, opts: DecoderOpts) {
