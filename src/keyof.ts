@@ -1,6 +1,6 @@
-import { Result, ok, err, isOk } from './utils'
-import { Type, DecoderOpts, RTError, error } from './type'
-import { StructType } from './struct'
+import { Result, ok, err, isOk } from './utils.js'
+import { Type, DecoderOpts, RTError, error } from './type.js'
+import { StructType } from './struct.js'
 
 // KeyOf //
 ///////////

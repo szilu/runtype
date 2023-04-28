@@ -1,5 +1,5 @@
-import { Result, ok, err, isOk, isErr } from './utils'
-import { Type, DecoderOpts, RTError, error } from './type'
+import { Result, ok, err, isOk, isErr } from './utils.js'
+import { Type, DecoderOpts, RTError, error } from './type.js'
 
 // Record //
 ////////////

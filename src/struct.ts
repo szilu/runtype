@@ -1,7 +1,7 @@
-import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
-import { Type, DecoderOpts, RTError, error } from './type'
-import { optional } from './optional'
-import { nullable } from './nullable'
+import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils.js'
+import { Type, DecoderOpts, RTError, error } from './type.js'
+import { optional } from './optional.js'
+import { nullable } from './nullable.js'
 
 // Struct //
 ////////////

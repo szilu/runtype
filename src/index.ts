@@ -1,27 +1,27 @@
 // Utils
-export * from './utils'
+export * from './utils.js'
 
 // Base
-export * from './type'
+export * from './type.js'
 
 // Decoders
-export * from './scalar'
-export * from './optional'
-export * from './nullable'
+export * from './scalar.js'
+export * from './optional.js'
+export * from './nullable.js'
 
-export * from './array'
-export * from './record'
-export * from './struct'
-export * from './tuple'
-export * from './union'
-export * from './intersection'
-export * from './tagged'
+export * from './array.js'
+export * from './record.js'
+export * from './struct.js'
+export * from './tuple.js'
+export * from './union.js'
+export * from './intersection.js'
+export * from './tagged.js'
 
-export * from './keyof'
+export * from './keyof.js'
 
-export * from './schema'
+export * from './schema.js'
 
-export { validateOrig } from './validator'
+export { validateOrig } from './validator.js'
 //export type { Validator } from './validator'
 
 // vim: ts=4

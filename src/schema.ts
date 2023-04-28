@@ -1,8 +1,8 @@
-import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils'
-import { Type, DecoderOpts, RTError, error } from './type'
-import { array } from './array'
-import { unknownObject } from './scalar'
-import { Validator, validateOrig } from './validator'
+import { Result, ok, err, isOk, isErr, RequiredKeys, OptionalKeys } from './utils.js'
+import { Type, DecoderOpts, RTError, error } from './type.js'
+import { array } from './array.js'
+import { unknownObject } from './scalar.js'
+import { Validator, validateOrig } from './validator.js'
 
 export interface FieldType<T> {
 	ts: Type<T>

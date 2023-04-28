@@ -1,6 +1,6 @@
-import * as t from './index'
-import * as v from './validator'
-import './jest.local.ts'
+import * as t from './index.js'
+import * as v from './validator.js'
+import './jest.local.js'
 
 declare global {
 	namespace jest {

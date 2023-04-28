@@ -1,4 +1,4 @@
-import { Result, ok, err, Err, isErr } from './utils'
+import { Result, ok, err, Err, isErr } from './utils.js'
 
 //////////
 // Type //
