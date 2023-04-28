@@ -305,7 +305,7 @@ class LiteralType<T extends ReadonlyArray<Scalar>> extends Type<T[number]> {
 	}
 }
 
-export function literal<T extends ReadonlyArray<Scalar>>(...values: T): LiteralType<T> {
+export function literal<const T extends ReadonlyArray<Scalar>>(...values: T): LiteralType<T> {
 	return new LiteralType(values)
 }
 
