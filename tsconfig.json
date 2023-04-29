@@ -3,7 +3,7 @@
 		"target": "es2020",
 		"module": "esnext",
 		"moduleResolution": "nodenext",
-		"outDir": "esm",
+		"outDir": "lib",
 		"esModuleInterop": true,
 
 		"declaration": true,

@@ -1,20 +1,16 @@
 {
   "name": "@symbion/runtype",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "Runtime type system for TypeScript",
   "type": "module",
   "main": "lib/index.js",
-  "module": "esm/index.js",
   "typings": "lib/index.d.ts",
   "files": [
-    "lib",
-    "esm"
+    "lib"
   ],
   "scripts": {
-    "build": "npm run clean && npm run build-cjs && npm run build-esm",
-    "build-esm": "tsc -p tsconfig.json",
-    "build-cjs": "tsc -p tsconfig-cjs.json",
-    "clean": "rimraf lib esm",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf lib",
     "lint": "tslint -p tsconfig.json",
     "watch": "tsc --watch -p tsconfig.json",
     "test": "jest",
