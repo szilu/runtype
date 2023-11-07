@@ -3,6 +3,7 @@ export * from './utils.js'
 
 // Base
 export * from './type.js'
+export * from './lazy.js'
 
 // Decoders
 export * from './scalar.js'

@@ -87,6 +87,24 @@ const value: MyType = decoded.ok
 | intersect    | `{ s: string } & { n: number }`                      | `T.intersect(T.struct({ s: T.string }), T.struct({ n: T.number }))` |
 | tagged union | `{ tag: 's', s: string } \| { tag: 'n', n: number }`  | `T.taggedUnion('tag')({ tag: T.literal('s'), s: T.string }, { tag: T.literal('n'), n: T.number })` |
 
+### Helpers
+
+#### Recursive types
+
+Recursive types can be created with __T.lazy()__ and manual TypeScript types (because TypeScript can't infer recursive types):
+
+```typescript
+interface Recursive {
+	name: string
+	children: MyType[]
+}
+
+const tRecursive: T.Type<Recursive> = T.lazy(() => T.struct({
+	name: T.string,
+	children: T.array(tRecursive)
+}))
+```
+
 ### Type modifiers
 
 #### Partial
