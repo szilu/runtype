@@ -66,16 +66,29 @@ describe('test intersection type', () => {
 			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' })).toBeErr()
 		})
 
+		it('should accept with "unknownFields": "reject" opt', () => {
+			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21  }, { unknownFields: 'reject' }))
+				.toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21 }))
+		})
+
 		it('should accept extra field with opt', () => {
-			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' }, { unknownFields: 'discard' })).toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21, e: 'extra' }))
+			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' }, { unknownFields: 'discard' }))
+				.toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21, e: 'extra' }))
 		})
 
 		it('should drop extra field with opt', () => {
-			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' }, { unknownFields: 'drop' })).toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21 }))
+			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' }, { unknownFields: 'drop' }))
+				.toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21 }))
+		})
+
+		it('should drop extra field with opt', () => {
+			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' }, { unknownFields: 'reject' }))
+			.toBeErr()
 		})
 
 		it('should print type', () => {
-			expect(tIntersectStruct.print()).toBe('{ s: string, n: number, b?: boolean | undefined } & { s: string, n2: number }')
+			expect(tIntersectStruct.print())
+				.toBe('{ s: string, n: number, b?: boolean | undefined } & { s: string, n2: number }')
 		})
 	})
 })

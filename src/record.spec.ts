@@ -32,6 +32,10 @@ describe('test record type', () => {
 	it('should print complex record type with parens', () => {
 		expect(t.record(t.union(t.number, t.string)).print()).toBe('Record<string, (number | string)>')
 	})
+
+	it('should validate record type', async () => {
+		expect(await t.validate(tRecord, { a: 1, b: 2, z: 42 })).toEqual(t.ok({ a: 1, b: 2, z: 42 }))
+	})
 })
 
 // vim: ts=4
