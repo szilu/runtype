@@ -70,6 +70,8 @@ class IntersectionStructType<T1 extends { [K: string]: unknown }, T2 extends { [
 	}
 }
 
+export function intersection<T1, T2>(type1: Type<T1>, type2: Type<T2>): Type<T1 & T2>
+export function intersection<T1 extends { [K: string]: unknown }, T2 extends { [K: string]: unknown }>(type1: StructType<T1>, type2: StructType<T2>): StructType<T1 & T2>
 export function intersection<T1, T2>(type1: Type<T1>, type2: Type<T2>): Type<T1 & T2> {
 	if (type1 instanceof StructType && type2 instanceof StructType) {
 		return new IntersectionStructType(type1, type2) as any as Type<T1 & T2>
