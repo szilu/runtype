@@ -15,6 +15,8 @@ export interface DecoderOpts {
 
 	coerceAll?: boolean
 
+	coerceToArray?: (value: unknown) => unknown
+
 	acceptNaN?: boolean
 
 	unknownFields?: 'reject' | 'drop' | 'discard'

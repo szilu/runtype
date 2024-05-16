@@ -20,6 +20,10 @@ class ArrayType<T> extends Type<T[]> {
 		const ret: T[] = []
 		let errors: RTError = []
 
+		if (!Array.isArray(u) && opts.coerceToArray) {
+			u = opts.coerceToArray(u)
+		}
+
 		if (!Array.isArray(u)) return error('expected Array')
 
 		for (let i = 0; i < u.length; i++) {
