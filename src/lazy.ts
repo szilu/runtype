@@ -13,13 +13,11 @@ class LazyType<T> extends Type<T> {
 	}
 
 	print() {
-		if (!this.type) this.type = this.def()
-		return this.type.print()
+		return 'FIXME_Lazy_print_not_implemented'
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<T, RTError> {
 		if (!this.type) this.type = this.def()
-		console.log('lazy', this.type)
 		return this.type.decode(u, opts)
 	}
 
