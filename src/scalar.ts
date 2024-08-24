@@ -234,7 +234,7 @@ export const any = new AnyType()
 
 // Unknown //
 /////////////
-class UnknownType extends Type<{}> {
+class UnknownType extends Type<unknown> {
 	print() {
 		return 'unknown'
 	}
