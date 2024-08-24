@@ -127,6 +127,36 @@ describe('test struct type', () => {
 			expect(tPatch.print()).toBe('{ s?: string | undefined, n?: number | undefined, b?: boolean | undefined | null }')
 		})
 	})
+
+	describe('test pick() constructor', () => {
+		it('should create a pick constructor', () => {
+			const tPick = t.pick(tStruct, ['s', 'n'])
+			expect(tPick.print()).toBe('{ s: string, n: number }')
+		})
+		it('should accept', () => {
+			const tPick = t.pick(tStruct, ['s', 'n'])
+			expect(t.decode(tPick, { s: 'string', n: 42 })).toEqual(t.ok({ s: 'string', n: 42 }))
+		})
+		it('should reject extra field', () => {
+			const tPick = t.pick(tStruct, ['s', 'n'])
+			expect(t.decode(tPick, { s: 'string', n: 42, b: true })).toBeErr()
+		})
+	})
+
+	describe('test omit() constructor', () => {
+		it('should create an omit constructor', () => {
+			const tOmit = t.omit(tStruct, ['s', 'n'])
+			expect(tOmit.print()).toBe('{ b?: boolean | undefined }')
+		})
+		it('should accept', () => {
+			const tOmit = t.omit(tStruct, ['s', 'n'])
+			expect(t.decode(tOmit, { b: true })).toEqual(t.ok({ b: true }))
+		})
+		it('should reject extra field', () => {
+			const tOmit = t.omit(tStruct, ['s', 'n'])
+			expect(t.decode(tOmit, { s: 'string', n: 42, b: true })).toBeErr()
+		})
+	})
 })
 
 // vim: ts=4

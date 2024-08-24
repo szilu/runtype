@@ -108,6 +108,26 @@ export function patch<T extends { [K: string]: unknown }>(strct: StructType<T>):
 	return struct(patchProps as any) as StructType<PatchStruct<T>>
 }
 
+// Pick //
+//////////
+export function pick<T extends { [K: string]: unknown }, K extends keyof T>(strct: StructType<T>, keys: K[]): StructType<Pick<T, K>> {
+	const pickProps: { [K in keyof T]?: Type<T[K]> } = {}
+	for (const p in strct.props) {
+		if (keys.includes(p as any)) pickProps[p] = strct.props[p]
+	}
+	return struct(pickProps as any) as StructType<Pick<T, K>>
+}
+
+// Omit //
+//////////
+export function omit<T extends { [K: string]: unknown }, K extends keyof T>(strct: StructType<T>, keys: K[]): StructType<Omit<T, K>> {
+	const omitProps: { [K in keyof T]?: Type<T[K]> } = {}
+	for (const p in strct.props) {
+		if (!keys.includes(p as any)) omitProps[p] = strct.props[p]
+	}
+	return struct(omitProps as any) as StructType<Omit<T, K>>
+}
+
 // FIXME: deprecated, remove later
 export const type = struct
 

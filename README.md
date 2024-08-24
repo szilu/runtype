@@ -138,6 +138,38 @@ const tPatchType = T.patch(tStruct)
 // = { s?: string, n?: number | null }
 ```
 
+#### Pick
+
+The __T.pick()__ type modifier takes a __Struct__ type and picks the specified fields.
+
+```typescript
+const tStruct = T.struct({
+	s: T.string,
+	n: T.optional(T.number),
+	b: T.boolean
+})
+// = { s: string, n?: number, b: boolean }
+
+const tPickType = T.pick(tStruct, ['s', 'n'])
+// = { s: string, n?: number }
+```
+
+#### Omit
+
+The __T.omit()__ type modifier takes a __Struct__ type and omits the specified fields.
+
+```typescript
+const tStruct = T.struct({
+	s: T.string,
+	n: T.optional(T.number),
+	b: T.boolean
+})
+// = { s: string, n?: number, b: boolean }
+
+const tOmitType = T.omit(tStruct, ['b'])
+// = { s: string, n?: number }
+```
+
 ### Decoder options
 
 The decoder() function accepts an optional config argument. It can be used for type coercion:
