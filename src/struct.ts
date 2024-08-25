@@ -97,7 +97,7 @@ export function partial<T extends { [K: string]: unknown }>(strct: StructType<T>
 // Patch //
 ///////////
 export type PatchField<T> = T extends undefined ? T | null : T | undefined
-export type PatchStruct<T extends { [K: string]: unknown }> = { [K in keyof T]: PatchField<T[K]> }
+export type PatchStruct<T extends {}> = { [K in keyof T]?: PatchField<T[K]> }
 
 export function patch<T extends { [K: string]: unknown }>(strct: StructType<T>): StructType<PatchStruct<T>> {
 	const patchProps: { [K in keyof T]?: PatchField<Type<T[K]>> } = {}
