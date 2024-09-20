@@ -85,7 +85,7 @@ const value: MyType = decoded.ok
 | union        | `string \| number \| Type`                             | `T.union(T.string, T.number, tType)` |
 | intersect    | `boolean \| true`                                     | `T.union(T.boolean, T.trueValue)` |
 | intersect    | `{ s: string } & { n: number }`                      | `T.intersect(T.struct({ s: T.string }), T.struct({ n: T.number }))` |
-| tagged union | `{ tag: 's', s: string } \| { tag: 'n', n: number }`  | `T.taggedUnion('tag')({ tag: T.literal('s'), s: T.string }, { tag: T.literal('n'), n: T.number })` |
+| tagged union | `{ tag: 's', s: string } \| { tag: 'n', n: number }`  | `T.taggedUnion('tag')(str: T.struct({ tag: T.literal('str'), s: T.string }), num: T.struct({ tag: T.literal('num'), n: T.number }))` |
 
 ### Helpers
 
