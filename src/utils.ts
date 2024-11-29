@@ -1,24 +1,22 @@
 // Result type //
 /////////////////
 export interface Ok<T> {
-	readonly _tag: 'Ok'
 	readonly ok: T
 }
 
 export interface Err<E = string> {
-	readonly _tag: 'Err'
 	readonly err: E
 }
 
 export type Result<T = undefined, E = string> = Ok<T> | Err<E>
 
-export function ok<T>(t: T): Ok<T> { return { _tag: 'Ok', ok: t } }
+export function ok<T>(t: T): Ok<T> { return { ok: t } }
 
-export function err<E>(error: E): Err<E> { return { _tag: 'Err', err: error } }
+export function err<E>(error: E): Err<E> { return { err: error } }
 
-export function isOk<T, E>(r: Result<T, E>): r is Ok<T> { return r._tag === 'Ok' }
+export function isOk<T, E>(r: Result<T, E>): r is Ok<T> { return 'ok' in r }
 
-export function isErr<E>(r: Result<any, E>): r is Err<E> { return r._tag === 'Err' }
+export function isErr<E>(r: Result<any, E>): r is Err<E> { return 'err' in r }
 
 // TS helpers //
 ////////////////
