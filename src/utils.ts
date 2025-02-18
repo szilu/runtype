@@ -22,8 +22,8 @@ export function isErr<E>(r: Result<any, E>): r is Err<E> { return 'err' in r }
 ////////////////
 export type Narrow<T> = T extends string | number | boolean ? T : never
 
-export type OptionalKeys<T> = { [P in keyof T]: undefined extends T[P] ? P : never }[keyof T]
-export type RequiredKeys<T> = { [P in keyof T]: undefined extends T[P] ? never : P }[keyof T]
+export type OptionalKeys<T> = Exclude<{ [P in keyof T]: undefined extends T[P] ? P : never }[keyof T], undefined>
+export type RequiredKeys<T> = Exclude<{ [P in keyof T]: undefined extends T[P] ? never : P }[keyof T], undefined>
 export type RequireFields<T> =
 	{ [K in RequiredKeys<T>]: T[K] }
 	& { [K in OptionalKeys<T>]-?: T[K] | undefined }
