@@ -24,6 +24,9 @@ export type Narrow<T> = T extends string | number | boolean ? T : never
 
 export type OptionalKeys<T> = { [P in keyof T]: undefined extends T[P] ? P : never }[keyof T]
 export type RequiredKeys<T> = { [P in keyof T]: undefined extends T[P] ? never : P }[keyof T]
+export type RequireFields<T> =
+	{ [K in RequiredKeys<T>]: T[K] }
+	& { [K in OptionalKeys<T>]-?: T[K] | undefined }
 
 // Other helper funcs //
 ////////////////////////
