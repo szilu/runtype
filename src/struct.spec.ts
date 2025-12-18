@@ -323,6 +323,90 @@ describe('test deepPartial', () => {
 				.toEqual(t.ok({ l1: { l2: {} } }))
 		})
 	})
+
+	describe('with nested optional structs (deep recursion)', () => {
+		const tNestedOptional = t.struct({
+			l1: t.optional(t.struct({
+				l2: t.optional(t.struct({
+					value: t.string
+				}))
+			}))
+		})
+
+		const tDeepPartialNestedOpt = t.deepPartial(tNestedOptional)
+
+		it('should accept empty object', () => {
+			expect(t.decode(tDeepPartialNestedOpt, {})).toEqual(t.ok({}))
+		})
+
+		it('should accept undefined at first optional level', () => {
+			expect(t.decode(tDeepPartialNestedOpt, { l1: undefined }))
+				.toEqual(t.ok({ l1: undefined }))
+		})
+
+		it('should accept empty struct inside first optional', () => {
+			expect(t.decode(tDeepPartialNestedOpt, { l1: {} }))
+				.toEqual(t.ok({ l1: {} }))
+		})
+
+		it('should accept undefined at second optional level', () => {
+			expect(t.decode(tDeepPartialNestedOpt, { l1: { l2: undefined } }))
+				.toEqual(t.ok({ l1: { l2: undefined } }))
+		})
+
+		it('should accept empty struct inside second optional', () => {
+			expect(t.decode(tDeepPartialNestedOpt, { l1: { l2: {} } }))
+				.toEqual(t.ok({ l1: { l2: {} } }))
+		})
+
+		it('should make innermost field optional via recursion', () => {
+			// The 'value' field should be optional after deep recursion
+			expect(t.decode(tDeepPartialNestedOpt, { l1: { l2: { value: 'test' } } }))
+				.toEqual(t.ok({ l1: { l2: { value: 'test' } } }))
+		})
+
+		it('should reject null where only undefined is allowed', () => {
+			expect(t.decode(tDeepPartialNestedOpt, { l1: null })).toBeErr()
+		})
+	})
+
+	describe('with mixed required/optional deep nesting', () => {
+		const tMixed = t.struct({
+			required: t.struct({
+				middle: t.optional(t.struct({
+					inner: t.struct({
+						value: t.string
+					})
+				}))
+			})
+		})
+
+		const tDeepPartialMixed = t.deepPartial(tMixed)
+
+		it('should accept empty object', () => {
+			expect(t.decode(tDeepPartialMixed, {})).toEqual(t.ok({}))
+		})
+
+		it('should accept empty required struct', () => {
+			expect(t.decode(tDeepPartialMixed, { required: {} }))
+				.toEqual(t.ok({ required: {} }))
+		})
+
+		it('should accept undefined for middle optional', () => {
+			expect(t.decode(tDeepPartialMixed, { required: { middle: undefined } }))
+				.toEqual(t.ok({ required: { middle: undefined } }))
+		})
+
+		it('should recurse through optional into inner required struct', () => {
+			expect(t.decode(tDeepPartialMixed, { required: { middle: { inner: {} } } }))
+				.toEqual(t.ok({ required: { middle: { inner: {} } } }))
+		})
+
+		it('should make deeply nested value optional', () => {
+			expect(t.decode(tDeepPartialMixed, { required: { middle: { inner: { value: 'test' } } } }))
+				.toEqual(t.ok({ required: { middle: { inner: { value: 'test' } } } }))
+		})
+	})
 })
 
 describe('test deepPatch', () => {
@@ -417,6 +501,80 @@ describe('test deepPatch', () => {
 			})).toEqual(t.ok({
 				l1: { opt: null, l2: {} }
 			}))
+		})
+	})
+
+	describe('with nested optional structs (deep recursion)', () => {
+		const tNestedOptional = t.struct({
+			l1: t.optional(t.struct({
+				l2: t.optional(t.struct({
+					value: t.string
+				}))
+			}))
+		})
+
+		const tDeepPatchNestedOpt = t.deepPatch(tNestedOptional)
+
+		it('should accept empty object', () => {
+			expect(t.decode(tDeepPatchNestedOpt, {})).toEqual(t.ok({}))
+		})
+
+		it('should accept null at first optional level (to clear)', () => {
+			expect(t.decode(tDeepPatchNestedOpt, { l1: null }))
+				.toEqual(t.ok({ l1: null }))
+		})
+
+		it('should accept null at second optional level (to clear)', () => {
+			expect(t.decode(tDeepPatchNestedOpt, { l1: { l2: null } }))
+				.toEqual(t.ok({ l1: { l2: null } }))
+		})
+
+		it('should accept empty nested struct', () => {
+			expect(t.decode(tDeepPatchNestedOpt, { l1: { l2: {} } }))
+				.toEqual(t.ok({ l1: { l2: {} } }))
+		})
+
+		it('should make innermost field optional via recursion', () => {
+			expect(t.decode(tDeepPatchNestedOpt, { l1: { l2: { value: 'test' } } }))
+				.toEqual(t.ok({ l1: { l2: { value: 'test' } } }))
+		})
+
+		it('should reject null for innermost required field', () => {
+			expect(t.decode(tDeepPatchNestedOpt, { l1: { l2: { value: null } } })).toBeErr()
+		})
+	})
+
+	describe('with mixed required/optional deep nesting', () => {
+		const tMixed = t.struct({
+			required: t.struct({
+				middle: t.optional(t.struct({
+					innerReq: t.string,
+					innerOpt: t.optional(t.number)
+				}))
+			})
+		})
+
+		const tDeepPatchMixed = t.deepPatch(tMixed)
+		type DeepPatchMixed = t.TypeOf<typeof tDeepPatchMixed>
+		const dpm: DeepPatchMixed = { required: { middle: { innerOpt: null }}}
+
+		it('should accept null for middle optional (to clear)', () => {
+			expect(t.decode(tDeepPatchMixed, { required: { middle: null } }))
+				.toEqual(t.ok({ required: { middle: null } }))
+		})
+
+		it('should accept null for deeply nested optional field', () => {
+			expect(t.decode(tDeepPatchMixed, { required: { middle: { innerOpt: null } } }))
+				.toEqual(t.ok({ required: { middle: { innerOpt: null } } }))
+		})
+
+		it('should reject null for deeply nested required field', () => {
+			expect(t.decode(tDeepPatchMixed, { required: { middle: { innerReq: null } } })).toBeErr()
+		})
+
+		it('should accept partial patch at any level', () => {
+			expect(t.decode(tDeepPatchMixed, { required: { middle: { innerReq: 'updated' } } }))
+				.toEqual(t.ok({ required: { middle: { innerReq: 'updated' } } }))
 		})
 	})
 

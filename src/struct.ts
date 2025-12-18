@@ -132,10 +132,10 @@ export function patch<T extends { [K: string]: unknown }>(strct: StructType<T>):
 // Deep Partial //
 //////////////////
 export type DeepPartial<T> = {
-	[K in keyof T]?: T[K] extends object
-		? T[K] extends any[] ? T[K]           // Arrays: keep as-is
-		: T[K] extends Date ? T[K]            // Date: keep as-is
-		: DeepPartial<T[K]>                   // Nested object: recurse
+	[K in keyof T]?: NonNullable<T[K]> extends object
+		? NonNullable<T[K]> extends any[] ? T[K]           // Arrays: keep as-is
+		: NonNullable<T[K]> extends Date ? T[K]            // Date: keep as-is
+		: DeepPartial<NonNullable<T[K]>> | Extract<T[K], null | undefined>  // Nested object: recurse, preserve nullability
 		: T[K]                                // Primitives: keep as-is
 } & {}
 
@@ -186,15 +186,14 @@ export function deepPartial<T extends { [K: string]: unknown }>(
 
 // Deep Patch //
 ////////////////
-export type DeepPatchField<T> = T extends undefined ? T | null : T | undefined
 export type DeepPatchStruct<T extends {}> = {
-	[K in keyof T]?: T[K] extends undefined
-		? DeepPatchField<T[K]> | null
-		: T[K] extends object
-			? T[K] extends any[] ? DeepPatchField<T[K]>
-			: T[K] extends Date ? DeepPatchField<T[K]>
-			: DeepPatchStruct<NonNullable<T[K]>> | undefined
-		: DeepPatchField<T[K]>
+	[K in keyof T]?: (
+		NonNullable<T[K]> extends object
+			? NonNullable<T[K]> extends any[] | Date
+				? NonNullable<T[K]>
+				: DeepPatchStruct<NonNullable<T[K]>>
+			: NonNullable<T[K]>
+	) | (undefined extends T[K] ? null : never) | undefined
 } & {}
 
 function processTypeForDeepPatch(type: Type<any>): Type<any> {
