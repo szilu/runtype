@@ -10,10 +10,14 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 	& { [K in OptionalKeys<T>]?: T[K] }
 > {
 	props: { [K in keyof T]: Type<T[K]> }
+	private _keys: (keyof T)[]
+	private _keySet: Set<string>
 
 	constructor(props: { [K in keyof T]: Type<T[K]> }) {
 		super()
 		this.props = props
+		this._keys = Object.keys(props) as (keyof T)[]
+		this._keySet = new Set(this._keys as string[])
 	}
 
 	print() {
@@ -22,17 +26,6 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 				`${String(name)}${isOk(this.props[name].decode(undefined, {})) ? '?' : ''}: ${this.props[name].print()}`
 			).join(', ')
 			+ ' }'
-	}
-
-	checkExtraFields(struct: Record<keyof T, unknown>, opts: DecoderOpts) {
-		let errors: RTError = []
-
-		if (opts.unknownFields === 'drop' || opts.unknownFields === 'discard') return []
-		for (const p of Object.getOwnPropertyNames(struct)) {
-			//if (!this.props.hasOwnProperty(p)) errors.push(`${p}: unknown field`)
-			if (!this.props.hasOwnProperty(p)) errors.push({ path: [p], error: 'unknown field' })
-		}
-		return errors
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<
@@ -44,36 +37,66 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 			return error('expected object')
 		}
 
-		const ret: { [K in keyof T]?: T[K] } = opts.unknownFields === 'discard' ? { ...u } : {}
-		const struct: Record<keyof T, unknown> = u as any
-		let errors: RTError = []
+		const struct = u as Record<string, unknown>
+		const ret: Record<string, unknown> = {}
+		const errors: RTError = []
 
-		// decode fields
-		for (const p in this.props) {
-			const res = this.props[p].decode(struct[p], opts)
+		// Decode known fields using cached keys
+		for (const p of this._keys) {
+			const key = p as string
+			const res = this.props[p].decode(struct[key], opts)
 			if (isOk(res)) {
-				ret[p] = res.ok
+				ret[key] = res.ok
 			} else {
-				//errors.push(`${p}: ${res.err}`)
-				errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
+				// Direct push without spread/map overhead
+				for (const e of res.err) {
+					errors.push({
+						path: e.path.length ? [key, ...e.path] : [key],
+						error: e.error
+					})
+				}
 			}
 		}
-		// check extra fields
-		errors.splice(-1, 0, ...this.checkExtraFields(struct, opts))
-		//if (errors.length) return err(errors.join('\n'))
+
+		// Check unknown fields (skip if dropping)
+		if (opts.unknownFields !== 'drop' && opts.unknownFields !== 'discard') {
+			for (const p in struct) {
+				if (!this._keySet.has(p)) {
+					errors.push({ path: [p], error: 'unknown field' })
+				}
+			}
+		} else if (opts.unknownFields === 'discard' && errors.length === 0) {
+			// Copy unknown fields only on success
+			for (const p in struct) {
+				if (!this._keySet.has(p)) {
+					ret[p] = struct[p]
+				}
+			}
+		}
+
 		if (errors.length) return err(errors)
 		return ok(ret as { [K in keyof T]: T[K] })
 	}
 
 	async validate(v: T, opts: DecoderOpts) {
-		const struct: T = v as any
-		let errors: RTError = []
-		for (const p in this.props) {
-			const res = await this.props[p].validate(struct[p], opts)
+		const struct = v as Record<string, unknown>
+		const errors: RTError = []
+
+		// Validate using cached keys
+		for (const p of this._keys) {
+			const key = p as string
+			const res = await this.props[p].validate(struct[key] as T[keyof T], opts)
 			if (isErr(res)) {
-				errors.push(...res.err.map(error => ({ path: [p, ...error.path], error: error.error })))
+				// Direct push without spread/map overhead
+				for (const e of res.err) {
+					errors.push({
+						path: e.path.length ? [key, ...e.path] : [key],
+						error: e.error
+					})
+				}
 			}
 		}
+
 		if (errors.length) return err(errors)
 		return this.validateBase(v, opts)
 	}
