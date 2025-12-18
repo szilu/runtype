@@ -1,18 +1,18 @@
-Runtime type system for TypeScript
-==================================
+Runtime Type System for TypeScript
+===================================
 
 Description
 -----------
 
-*RunType* is a runtime type system for TypeScript.
+**RunType** is a runtime type system for TypeScript.
 
-It was inspired by IO-TS, but I made some opinionated changes in the concept. IO-TS is mathematically correct and follows JavaScript ant TypeScript specifications to the letter. With *RunType* I wanted to create something more practical.
+It was inspired by IO-TS, but I made some opinionated changes in the concept. IO-TS is mathematically correct and follows JavaScript and TypeScript specifications to the letter. With RunType I wanted to create something more practical.
 
 Some of the changes:
 
- * I am not too familiar with functional programming concepts, so I don't use them in *RunType*.
- * The __struct__ combinator handles optional fields easier (without the partial + intersection things in IO-TS)
- * __number__ decoder does not accept __NaN__.
+ * I am not too familiar with functional programming concepts, so I don't use them in RunType.
+ * The **struct** combinator handles optional fields easier (without the partial + intersection things in IO-TS)
+ * **number** decoder does not accept **NaN**.
  * Decoder accepts a config argument and supports type coercion and some other modifiers
  * Validators
  * Runtime type description generation (print() method)
@@ -20,14 +20,14 @@ Some of the changes:
 Installation
 ------------
 
-    npm install @symbion/runtype
+```bash
+npm install @symbion/runtype
+```
 
 Usage
 -----
 
-This is a work in progress. I plan to write some documentation soon, in the meantime you can look at the test files (src/*.spec.ts) for usage information.
-
-### Basic usage
+### Basic Usage
 
 First create a type:
 
@@ -35,8 +35,8 @@ First create a type:
 import T from '@symbion/runtype'
 
 const tMyType = T.struct({
-	s: T.string,
-	n: T.optional(T.number)
+    s: T.string,
+    n: T.optional(T.number)
 })
 ```
 
@@ -52,69 +52,123 @@ You can decode an unknown value:
 const u: unknown = { s: 'string', n: 42 }
 
 const decoded = T.decode(tMyType, u)
-isOk(decoded)
+T.isOk(decoded)
 // = true
 
 const value: MyType = decoded.ok
 // = { s: 'string', n: 42 }
 ```
 
-### Type constructors
+Type Constructors
+-----------------
+
+### Primitive Types
+
+| TypeScript | RunType |
+|------------|---------|
+| `string` | `T.string` |
+| `number` | `T.number` |
+| `number` (integer only) | `T.integer` |
+| `number` (integer alias) | `T.id` |
+| `boolean` | `T.boolean` |
+| `bigint` | `T.bigint` |
+| `symbol` | `T.symbol` |
+| `Date` | `T.date` |
+
+### Special Types
+
+| TypeScript | RunType |
+|------------|---------|
+| `undefined` | `T.undefinedValue` |
+| `null` | `T.nullValue` |
+| `true` | `T.trueValue` |
+| `false` | `T.falseValue` |
+| `any` | `T.any` |
+| `unknown` | `T.unknown` |
+| `{}` (non-null object) | `T.unknownObject` |
+| `void` | `T.voidType` |
+| `never` | `T.never` |
+
+### Literal Types
+
+```typescript
+T.literal('a', 'b', 3)
+// TypeScript: 'a' | 'b' | 3
+```
+
+### Compound Types
 
 | Type | TypeScript | RunType |
-| ---- | ---------- | ------- |
-| undefined    | undefined                                            | T.undefinedValue |
-| null         | null                                                 | T.nullValue      |
-| true         | true                                                 | T.trueValue      |
-| false        | false                                                | T.falseValue     |
-| string       | string                                               | T.string         |
-| number       | number                                               | T.number         |
-| integer      | X                                                    | T.integer        |
-| boolean      | boolean                                              | T.boolean        |
-| date         | date                                                 | T.date           |
-| any          | any                                                  | T.any            |
-| unknown      | unknown                                              | T.unknown        |
-| literal      | `'a' \| 'b' \| 3`                                      | `T.literal('a', 'b', 3)` |
-| optional     | `Type \| undefined`                                   | `T.optional(tType)` |
-| nullable     | `Type \| null \| undefined`                            | `T.nullable(tType)` |
-| array        | `Array<Type>`                                        | `T.array(tType)` |
-| record       | `record<string, Type>`                               | `T.record(tType)` |
-| struct       | `{ s: string, n: number }`                           | `T.struct({ s: T.string, n: T.number })` |
-| key of       | `keyof { s: string, n: number }`                     | `T.keyof(T.struct({ s: T.string, n: T.number }))` |
-| tuple        | `[string, number, Type]`                             | `T.tuple(T.string, T.number, tType)` |
-| union        | `string \| number \| Type`                             | `T.union(T.string, T.number, tType)` |
-| intersect    | `boolean \| true`                                     | `T.union(T.boolean, T.trueValue)` |
-| intersect    | `{ s: string } & { n: number }`                      | `T.intersect(T.struct({ s: T.string }), T.struct({ n: T.number }))` |
-| tagged union | `{ tag: 's', s: string } \| { tag: 'n', n: number }`  | `T.taggedUnion('tag')(str: T.struct({ tag: T.literal('str'), s: T.string }), num: T.struct({ tag: T.literal('num'), n: T.number }))` |
+|------|------------|---------|
+| Array | `Array<Type>` | `T.array(tType)` |
+| Record | `Record<string, Type>` | `T.record(tType)` |
+| Struct | `{ s: string, n: number }` | `T.struct({ s: T.string, n: T.number })` |
+| Tuple | `[string, number, Type]` | `T.tuple(T.string, T.number, tType)` |
+| Union | `string \| number \| Type` | `T.union(T.string, T.number, tType)` |
+| Intersection | `{ s: string } & { n: number }` | `T.intersection(T.struct({ s: T.string }), T.struct({ n: T.number }))` |
+| Tagged union | `{ tag: 's', s: string } \| { tag: 'n', n: number }` | `T.taggedUnion('tag')({ str: T.struct({ tag: T.literal('str'), s: T.string }), num: T.struct({ tag: T.literal('num'), n: T.number }) })` |
+| Key of | `keyof { s: string, n: number }` | `T.keyof(T.struct({ s: T.string, n: T.number }))` |
 
-### Helpers
+### Wrapper Types
 
-#### Recursive types
+| Type | TypeScript | RunType |
+|------|------------|---------|
+| Optional | `Type \| undefined` | `T.optional(tType)` or `tType.optional()` |
+| Nullable | `Type \| null \| undefined` | `T.nullable(tType)` or `tType.nullable()` |
+| Default | `Type` (with fallback) | `tType.default(value)` or `T.withDefault(tType, value)` |
 
-Recursive types can be created with __T.lazy()__ and manual TypeScript types (because TypeScript can't infer recursive types):
+Chainable Methods
+-----------------
+
+The `optional()`, `nullable()`, and `default()` modifiers can be chained directly on types:
+
+```typescript
+// Chainable syntax
+const tOptional = T.string.optional()
+const tNullable = T.number.nullable()
+const tWithDefault = T.string.default('fallback')
+
+// Factory functions (also available)
+const tOptional2 = T.optional(T.string)
+const tNullable2 = T.nullable(T.number)
+const tWithDefault2 = T.withDefault(T.string, 'fallback')
+```
+
+The `default()` modifier accepts either a value or a factory function:
+
+```typescript
+T.string.default('static value')
+T.array(T.string).default(() => [])  // Factory function for mutable defaults
+```
+
+Recursive Types
+---------------
+
+Recursive types can be created with **T.lazy()** and manual TypeScript types (because TypeScript can't infer recursive types):
 
 ```typescript
 interface Recursive {
-	name: string
-	children: MyType[]
+    name: string
+    children: Recursive[]
 }
 
 const tRecursive: T.Type<Recursive> = T.lazy(() => T.struct({
-	name: T.string,
-	children: T.array(tRecursive)
+    name: T.string,
+    children: T.array(tRecursive)
 }))
 ```
 
-### Type modifiers
+Type Modifiers
+--------------
 
-#### Partial
+### partial
 
-The __T.partial()__ type modifier takes a __Struct__ type and converts all fields to optional:
+The **T.partial()** type modifier takes a **Struct** type and converts all fields to optional:
 
 ```typescript
 const tStruct = T.struct({
-	s: T.string,
-	n: T.optional(T.number)
+    s: T.string,
+    n: T.optional(T.number)
 })
 // = { s: string, n?: number }
 
@@ -122,15 +176,15 @@ const tPartialType = T.partial(tStruct)
 // = { s?: string, n?: number }
 ```
 
-#### Patch
+### patch
 
-The __T.patch()__ type modifier takes a __Struct__ type and converts all *optional* fields to *nullable* and all *requires* fields to *optional*.
+The **T.patch()** type modifier takes a **Struct** type and converts all *optional* fields to *nullable* and all *required* fields to *optional*.
 It is useful for update APIs, where *undefined* or missing fields mean not to update and *null* value means to clear that field.
 
 ```typescript
 const tStruct = T.struct({
-	s: T.string,
-	n: T.optional(T.number)
+    s: T.string,
+    n: T.optional(T.number)
 })
 // = { s: string, n?: number }
 
@@ -138,15 +192,15 @@ const tPatchType = T.patch(tStruct)
 // = { s?: string, n?: number | null }
 ```
 
-#### Pick
+### pick
 
-The __T.pick()__ type modifier takes a __Struct__ type and picks the specified fields.
+The **T.pick()** type modifier takes a **Struct** type and picks the specified fields.
 
 ```typescript
 const tStruct = T.struct({
-	s: T.string,
-	n: T.optional(T.number),
-	b: T.boolean
+    s: T.string,
+    n: T.optional(T.number),
+    b: T.boolean
 })
 // = { s: string, n?: number, b: boolean }
 
@@ -154,15 +208,15 @@ const tPickType = T.pick(tStruct, ['s', 'n'])
 // = { s: string, n?: number }
 ```
 
-#### Omit
+### omit
 
-The __T.omit()__ type modifier takes a __Struct__ type and omits the specified fields.
+The **T.omit()** type modifier takes a **Struct** type and omits the specified fields.
 
 ```typescript
 const tStruct = T.struct({
-	s: T.string,
-	n: T.optional(T.number),
-	b: T.boolean
+    s: T.string,
+    n: T.optional(T.number),
+    b: T.boolean
 })
 // = { s: string, n?: number, b: boolean }
 
@@ -170,96 +224,180 @@ const tOmitType = T.omit(tStruct, ['b'])
 // = { s: string, n?: number }
 ```
 
-### Decoder options
+### deepPartial
 
-The decoder() function accepts an optional config argument. It can be used for type coercion:
+The **T.deepPartial()** type modifier recursively makes all nested struct fields optional:
+
+```typescript
+const tStruct = T.struct({
+    name: T.string,
+    address: T.struct({
+        city: T.string,
+        zip: T.string
+    })
+})
+// = { name: string, address: { city: string, zip: string } }
+
+const tDeepPartial = T.deepPartial(tStruct)
+// = { name?: string, address?: { city?: string, zip?: string } }
+```
+
+Arrays and Date types are preserved as-is (not recursed into).
+
+### deepPatch
+
+The **T.deepPatch()** type modifier is the deep version of `patch()`, applying patch semantics recursively:
+
+```typescript
+const tStruct = T.struct({
+    name: T.string,
+    profile: T.struct({
+        bio: T.optional(T.string),
+        age: T.number
+    })
+})
+
+const tDeepPatch = T.deepPatch(tStruct)
+// Required fields become optional, optional fields become nullable, recursively
+```
+
+Decoder Options
+---------------
+
+The `decode()` function accepts an optional config argument. It can be used for type coercion:
 
 ```typescript
 T.decode(T.number, '42')
 // = { _tag: 'Err', err: [ { path: [], error: 'expected number' } ] }
 
 T.decode(T.number, '42', { coerceStringToNumber: true })
-// = isOk(decoded)
+// = { _tag: 'Ok', ok: 42 }
 ```
 
-All available coercion options:
+### Scalar Coercion
 
-| Option name             | Type    |       |
-| ----------------------- | ------- | ----- |
-| coerceNumberToString    | boolean | Coerce numbers to string |
-| coerceNumberToBoolean   | boolean | Coerce numbers to boolean |
-| coerceStringToNumber    | boolean | Coerce string to number |
-| coerceScalar            | boolean | = coerceNumberToString, coerceNumberToBoolean, coerceStringToNumber |
-| coerceStringToDate      | boolean | Coerce string to Date |
-| coerceNumberToDate      | boolean | Coerce numbers to Date |
-| coerceDate              | boolean | = coerceStringToDate, coerceNumberToDate |
-| coerceAll               | boolean | All the above coercion |
-| acceptNaN               | boolean | Make T.number accept NaN as number |
-| unknownFields           | `'reject' \| 'drop' \| 'discard'` | How to treat unknown fields. (_reject_: error, _drop_: drops unknown fields from the output, _discard_: leaves in output as is) |
+| Option | Description |
+|--------|-------------|
+| `coerceNumberToString` | Coerce numbers to string |
+| `coerceNumberToBoolean` | Coerce numbers to boolean |
+| `coerceStringToNumber` | Coerce string to number |
+| `coerceScalar` | Enable all scalar coercions above |
 
-### Validation
+### Date Coercion
 
-The _decode()_ function does type decoding, which is a synchron function.
-Runtype also handles data validation, what is defined as an asynchron function. The type constructors define some validator methods and user defined functions can also be used.
+| Option | Description |
+|--------|-------------|
+| `coerceStringToDate` | Coerce string to Date |
+| `coerceNumberToDate` | Coerce number to Date (timestamp) |
+| `coerceDate` | Enable all date coercions above |
+
+### BigInt Coercion
+
+| Option | Description |
+|--------|-------------|
+| `coerceStringToBigInt` | Coerce string to bigint |
+| `coerceNumberToBigInt` | Coerce integer number to bigint |
+| `coerceBigInt` | Enable all bigint coercions above |
+
+### Array Coercion
+
+| Option | Description |
+|--------|-------------|
+| `coerceToArray` | Custom function `(value: unknown) => unknown` to convert values to arrays |
+
+### Other Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `coerceAll` | `boolean` | Enable all coercion options |
+| `acceptNaN` | `boolean` | Make `T.number` accept NaN as a valid number |
+| `unknownFields` | `'reject' \| 'drop' \| 'discard'` | How to handle unknown fields in structs: *reject* (error, default), *drop* (remove from output), *discard* (keep in output) |
+
+Validation
+----------
+
+The `decode()` function does type decoding, which is a synchronous function.
+RunType also handles data validation, which is defined as an asynchronous function. The type constructors define some validator methods and user defined functions can also be used.
 
 ```typescript
-const tMyType = struct({
-	s: T.string.minLength(2)
+const tMyType = T.struct({
+    s: T.string.minLength(2)
 })
 ```
 
 Validation works like decoding:
 
 ```typescript
-T.validate(T.string.minLength(2), 'abc')
+await T.validate(T.string.minLength(2), 'abc')
 // = { _tag: 'Ok', ok: 'abc' }
 
 T.decode(T.string.minLength(2), 'a')
 // = { _tag: 'Ok', ok: 'a' }
-T.validate(T.string.minLength(2), 'a')
+
+await T.validate(T.string.minLength(2), 'a')
 // = { _tag: 'Err', err: [ { path: [], error: 'length must be at least 2' } ] }
 ```
 
-Awailable validators:
-
-#### String validators
+### String Validators
 
 | Validator | Description |
-|-|-|
-| in(value1, value2, ...) | Value is one of _value1_, value2, .... |
-| minLength(length)       | Length is at least _length_ |
-| maxLength(length)       | Length is at most _length_ |
-| matches(pattern)        | Value matches _pattern_ |
-| email()                 | Value is an email address |
+|-----------|-------------|
+| `in(value1, value2, ...)` | Value is one of the specified values |
+| `length(len)` | Length equals `len` |
+| `length(min, max)` | Length is between `min` and `max` |
+| `minLength(len)` | Length is at least `len` |
+| `maxLength(len)` | Length is at most `len` |
+| `matches(pattern)` | Value matches the RegExp `pattern` |
+| `email()` | Value is a valid email address |
 
-#### Number validators
-
-| Validator | Description |
-|-|-|
-| in(value1, value2, ...)     | Value is one of _value1_, value2, .... |
-| integer()                   | Value is an integer |
-| min(minValue)               | Value is at least _minValue_ |
-| max(maxValue)               | Value is at most _maxValue_ |
-| between(minValue, maxValue) | Value is between _minValue_ and _maxValue_ |
-
-#### Boolean validators
+### Number Validators
 
 | Validator | Description |
-|-|-|
-| true()                      | Value is true |
-| false()                     | Value is false |
+|-----------|-------------|
+| `in(value1, value2, ...)` | Value is one of the specified values |
+| `integer()` | Value is an integer |
+| `min(minValue)` | Value is at least `minValue` |
+| `max(maxValue)` | Value is at most `maxValue` |
+| `between(min, max)` | Value is between `min` and `max` |
 
-#### Literal validators
+### BigInt Validators
 
 | Validator | Description |
-|-|-|
-| in(value1, value2, ...) | Value is one of _value1_, value2, .... |
+|-----------|-------------|
+| `min(minValue)` | Value is at least `minValue` |
+| `max(maxValue)` | Value is at most `maxValue` |
+| `between(min, max)` | Value is between `min` and `max` |
+| `positive()` | Value is greater than 0 |
+| `negative()` | Value is less than 0 |
+| `nonNegative()` | Value is 0 or greater |
 
-#### Custom validators
+### Boolean Validators
+
+| Validator | Description |
+|-----------|-------------|
+| `true()` | Value is true |
+| `false()` | Value is false |
+
+### Array Validators
+
+| Validator | Description |
+|-----------|-------------|
+| `length(len)` | Length equals `len` |
+| `length(min, max)` | Length is between `min` and `max` |
+| `minLength(len)` | Length is at least `len` |
+| `maxLength(len)` | Length is at most `len` |
+
+### Literal Validators
+
+| Validator | Description |
+|-----------|-------------|
+| `in(value1, value2, ...)` | Value is one of the specified values |
+
+### Custom Validators
 
 ```typescript
 function max42(v: number | undefined) {
-	return (v || 0) <= 42 ? T.ok(v) : T.error("Max 42 is allowed!")
+    return (v || 0) <= 42 ? T.ok(v) : T.error("Max 42 is allowed!")
 }
 
 await T.validate(T.number.addValidator(max42), 43)
@@ -269,15 +407,15 @@ await T.validate(T.number.addValidator(max42), 43)
 Internals
 ---------
 
-### Missing properties vs undefined
+### Missing Properties vs Undefined
 
-TypeScript (because of JavaScript) differentiates missing properties and properties with __undefined__ value. This is sometimes useful, however it makes it more difficult to handle this in runtime type systems.
+TypeScript (because of JavaScript) differentiates missing properties and properties with **undefined** value. This is sometimes useful, however it makes it more difficult to handle this in runtime type systems.
 Take the following simple TypeScript type:
 
 ```typescript
 interface Person {
-	name: string
-	age?: number
+    name: string
+    age?: number
 }
 ```
 
@@ -285,33 +423,33 @@ In IO-TS you can create it like this:
 
 ```typescript
 const tPerson = T.intersection([
-	T.type({
-		name: T.string
-	}),
-	T.partial({
-		age: T.number
-	})
-type Person = T.TypeOf<typeof tPerson>
+    T.type({
+        name: T.string
+    }),
+    T.partial({
+        age: T.number
+    })
 ])
+type Person = T.TypeOf<typeof tPerson>
 ```
 
-*RunType* uses complex TypeScript mechanisms to achieve a simpler and readable syntax:
+RunType uses complex TypeScript mechanisms to achieve a simpler and readable syntax:
 
 ```typescript
 const tPerson = T.struct({
-	name: T.string
-	age: T.optional(T.number)
-])
+    name: T.string,
+    age: T.optional(T.number)
+})
 type Person = T.TypeOf<typeof tPerson>
 ```
 
-Under the hood RunType generates the same intersection type beacause of limitations in TypeScipt, but it works the same as the original type:
+Under the hood RunType generates the same intersection type because of limitations in TypeScript, but it works the same as the original type:
 
 ```typescript
 type Person = { name: string } & { age?: number }
 ```
 
-Closing thoughts
+Closing Thoughts
 ----------------
 
 If you want to boost your TypeScript knowledge to the next level I highly recommend to write a runtime type system. I guarantee it will be fun! :)

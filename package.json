@@ -1,6 +1,6 @@
 {
   "name": "@symbion/runtype",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Runtime type system for TypeScript",
   "type": "module",
   "main": "lib/index.js",
