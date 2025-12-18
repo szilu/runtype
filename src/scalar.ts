@@ -266,6 +266,116 @@ class UnknownObjectType extends Type<{}> {
 }
 export const unknownObject = new UnknownObjectType()
 
+// BigInt //
+////////////
+class BigIntType extends Type<bigint> {
+	print() {
+		return 'bigint'
+	}
+
+	decode(u: unknown, opts: DecoderOpts) {
+		switch (typeof u) {
+			case 'bigint': return ok(u)
+			case 'string': if (opts.coerceStringToBigInt || opts.coerceBigInt || opts.coerceAll) {
+				try { return ok(BigInt(u)) } catch { break }
+			} break
+			case 'number': if (opts.coerceNumberToBigInt || opts.coerceBigInt || opts.coerceAll) {
+				if (Number.isInteger(u)) {
+					try { return ok(BigInt(u)) } catch { break }
+				}
+			}
+		}
+		return error('expected bigint')
+	}
+
+	async validate(v: bigint, opts: DecoderOpts) {
+		return this.validateBase(v, opts)
+	}
+
+	// Validators
+	min(min: bigint) {
+		return this.addValidator((v: bigint) => v >= min ? ok(v)
+			: error(`must be at least ${min}`))
+	}
+
+	max(max: bigint) {
+		return this.addValidator((v: bigint) => v <= max ? ok(v)
+			: error(`must be at most ${max}`))
+	}
+
+	between(min: bigint, max: bigint) {
+		return this.addValidator((v: bigint) => min <= v && v <= max ? ok(v)
+			: error(`must be between ${min} and ${max}`))
+	}
+
+	positive() {
+		return this.addValidator((v: bigint) => v > 0n ? ok(v)
+			: error('must be positive'))
+	}
+
+	negative() {
+		return this.addValidator((v: bigint) => v < 0n ? ok(v)
+			: error('must be negative'))
+	}
+
+	nonNegative() {
+		return this.addValidator((v: bigint) => v >= 0n ? ok(v)
+			: error('must be non-negative'))
+	}
+}
+export const bigint = new BigIntType()
+
+// Symbol //
+////////////
+class SymbolType extends Type<symbol> {
+	print() {
+		return 'symbol'
+	}
+
+	decode(u: unknown, opts: DecoderOpts) {
+		return typeof u === 'symbol' ? ok(u) : error('expected symbol')
+	}
+
+	async validate(v: symbol, opts: DecoderOpts) {
+		return this.validateBase(v, opts)
+	}
+}
+export const symbol = new SymbolType()
+
+// Void //
+//////////
+class VoidType extends Type<void> {
+	print() {
+		return 'void'
+	}
+
+	decode(u: unknown, opts: DecoderOpts) {
+		return u === undefined ? ok(undefined) : error('expected undefined')
+	}
+
+	async validate(v: void, opts: DecoderOpts) {
+		return this.validateBase(v, opts)
+	}
+}
+export const voidType = new VoidType()
+
+// Never //
+///////////
+class NeverType extends Type<never> {
+	print() {
+		return 'never'
+	}
+
+	decode(u: unknown, opts: DecoderOpts): Result<never, RTError> {
+		return error('never type cannot be satisfied')
+	}
+
+	async validate(v: never, opts: DecoderOpts): Promise<Result<never, RTError>> {
+		return error('never type cannot be satisfied')
+	}
+}
+export const never = new NeverType()
+
 // Literal //
 /////////////
 type Scalar = boolean | number | string

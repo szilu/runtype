@@ -398,6 +398,181 @@ describe('test basic types', () => {
 			expect(await t.validate(tLiteral.in('a', 'b'), 1)).toBeErr()
 		})
 	})
+
+	describe('test bigint type', () => {
+		it('should accept a bigint', () => {
+			expect(t.decode(t.bigint, 42n)).toEqual(t.ok(42n))
+		})
+
+		it('should reject number', () => {
+			expect(t.decode(t.bigint, 42)).toBeErr()
+		})
+
+		it('should reject string', () => {
+			expect(t.decode(t.bigint, '42')).toBeErr()
+		})
+
+		it('should coerce string with opt', () => {
+			expect(t.decode(t.bigint, '42', { coerceBigInt: true })).toEqual(t.ok(42n))
+		})
+
+		it('should coerce integer number with opt', () => {
+			expect(t.decode(t.bigint, 42, { coerceBigInt: true })).toEqual(t.ok(42n))
+		})
+
+		it('should reject non-integer number even with coercion', () => {
+			expect(t.decode(t.bigint, 42.5, { coerceBigInt: true })).toBeErr()
+		})
+
+		it('should reject invalid string even with coercion', () => {
+			expect(t.decode(t.bigint, 'abc', { coerceBigInt: true })).toBeErr()
+		})
+
+		it('should reject undefined', () => {
+			expect(t.decode(t.bigint, undefined)).toBeErr()
+		})
+
+		it('should print type', () => {
+			expect(t.bigint.print()).toBe('bigint')
+		})
+
+		// min()
+		it('should accept min()', async () => {
+			expect(await t.validate(t.bigint.min(10n), 15n)).toEqual(t.ok(15n))
+		})
+
+		it('should reject min()', async () => {
+			expect(await t.validate(t.bigint.min(10n), 5n)).toBeErr()
+		})
+
+		// max()
+		it('should accept max()', async () => {
+			expect(await t.validate(t.bigint.max(10n), 5n)).toEqual(t.ok(5n))
+		})
+
+		it('should reject max()', async () => {
+			expect(await t.validate(t.bigint.max(10n), 15n)).toBeErr()
+		})
+
+		// between()
+		it('should accept between()', async () => {
+			expect(await t.validate(t.bigint.between(0n, 10n), 5n)).toEqual(t.ok(5n))
+		})
+
+		it('should reject between()', async () => {
+			expect(await t.validate(t.bigint.between(0n, 10n), 15n)).toBeErr()
+		})
+
+		// positive()
+		it('should accept positive()', async () => {
+			expect(await t.validate(t.bigint.positive(), 5n)).toEqual(t.ok(5n))
+		})
+
+		it('should reject positive()', async () => {
+			expect(await t.validate(t.bigint.positive(), 0n)).toBeErr()
+			expect(await t.validate(t.bigint.positive(), -5n)).toBeErr()
+		})
+
+		// negative()
+		it('should accept negative()', async () => {
+			expect(await t.validate(t.bigint.negative(), -5n)).toEqual(t.ok(-5n))
+		})
+
+		it('should reject negative()', async () => {
+			expect(await t.validate(t.bigint.negative(), 0n)).toBeErr()
+			expect(await t.validate(t.bigint.negative(), 5n)).toBeErr()
+		})
+
+		// nonNegative()
+		it('should accept nonNegative()', async () => {
+			expect(await t.validate(t.bigint.nonNegative(), 0n)).toEqual(t.ok(0n))
+			expect(await t.validate(t.bigint.nonNegative(), 5n)).toEqual(t.ok(5n))
+		})
+
+		it('should reject nonNegative()', async () => {
+			expect(await t.validate(t.bigint.nonNegative(), -5n)).toBeErr()
+		})
+	})
+
+	describe('test symbol type', () => {
+		const sym = Symbol('test')
+
+		it('should accept a symbol', () => {
+			expect(t.decode(t.symbol, sym)).toEqual(t.ok(sym))
+		})
+
+		it('should accept Symbol.for()', () => {
+			const globalSym = Symbol.for('global')
+			expect(t.decode(t.symbol, globalSym)).toEqual(t.ok(globalSym))
+		})
+
+		it('should reject string', () => {
+			expect(t.decode(t.symbol, 'symbol')).toBeErr()
+		})
+
+		it('should reject number', () => {
+			expect(t.decode(t.symbol, 42)).toBeErr()
+		})
+
+		it('should reject undefined', () => {
+			expect(t.decode(t.symbol, undefined)).toBeErr()
+		})
+
+		it('should reject null', () => {
+			expect(t.decode(t.symbol, null)).toBeErr()
+		})
+
+		it('should print type', () => {
+			expect(t.symbol.print()).toBe('symbol')
+		})
+	})
+
+	describe('test void type', () => {
+		it('should accept undefined', () => {
+			expect(t.decode(t.voidType, undefined)).toEqual(t.ok(undefined))
+		})
+
+		it('should reject null', () => {
+			expect(t.decode(t.voidType, null)).toBeErr()
+		})
+
+		it('should reject string', () => {
+			expect(t.decode(t.voidType, '')).toBeErr()
+		})
+
+		it('should reject number', () => {
+			expect(t.decode(t.voidType, 0)).toBeErr()
+		})
+
+		it('should reject object', () => {
+			expect(t.decode(t.voidType, {})).toBeErr()
+		})
+
+		it('should print type', () => {
+			expect(t.voidType.print()).toBe('void')
+		})
+	})
+
+	describe('test never type', () => {
+		it('should reject undefined', () => {
+			expect(t.decode(t.never, undefined)).toBeErr()
+		})
+
+		it('should reject null', () => {
+			expect(t.decode(t.never, null)).toBeErr()
+		})
+
+		it('should reject any value', () => {
+			expect(t.decode(t.never, 42)).toBeErr()
+			expect(t.decode(t.never, 'hello')).toBeErr()
+			expect(t.decode(t.never, {})).toBeErr()
+			expect(t.decode(t.never, [])).toBeErr()
+		})
+
+		it('should print type', () => {
+			expect(t.never.print()).toBe('never')
+		})
+	})
 })
 
 // vim: ts=4

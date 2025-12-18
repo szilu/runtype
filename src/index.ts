@@ -7,8 +7,6 @@ export * from './lazy.js'
 
 // Decoders
 export * from './scalar.js'
-export * from './optional.js'
-export * from './nullable.js'
 
 export * from './array.js'
 export * from './record.js'
