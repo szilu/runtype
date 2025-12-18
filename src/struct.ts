@@ -108,6 +108,109 @@ export function patch<T extends { [K: string]: unknown }>(strct: StructType<T>):
 	return struct(patchProps as any) as StructType<PatchStruct<T>>
 }
 
+// Deep Partial //
+//////////////////
+export type DeepPartial<T> = {
+	[K in keyof T]?: T[K] extends object
+		? T[K] extends any[] ? T[K]           // Arrays: keep as-is
+		: T[K] extends Date ? T[K]            // Date: keep as-is
+		: DeepPartial<T[K]>                   // Nested object: recurse
+		: T[K]                                // Primitives: keep as-is
+} & {}
+
+// Duck-type check for types with inner .type property (OptionalType, NullableType)
+function hasInnerType(type: Type<any>): type is Type<any> & { type: Type<any> } {
+	return 'type' in type && (type as any).type != null
+}
+
+function processTypeForDeepPartial(type: Type<any>): Type<any> {
+	// StructType: recurse
+	if (type instanceof StructType) {
+		return deepPartial(type)
+	}
+
+	// Optional/Nullable wrapper: process inner type, re-wrap
+	if (hasInnerType(type)) {
+		const innerType = (type as any).type
+		const processedInner = processTypeForDeepPartial(innerType)
+		// Check if nullable (accepts null) or just optional
+		if (isOk(type.decode(null, {}))) {
+			return nullable(processedInner)
+		} else {
+			return optional(processedInner)
+		}
+	}
+
+	// Arrays, records, unions, etc: return as-is
+	return type
+}
+
+export function deepPartial<T extends { [K: string]: unknown }>(
+	strct: StructType<T>
+): StructType<DeepPartial<T>> {
+	const deepPartialProps: { [K in keyof T]?: Type<any> } = {}
+
+	for (const p in strct.props) {
+		const type = strct.props[p]
+		if (!type) continue
+
+		const processedType = processTypeForDeepPartial(type)
+		deepPartialProps[p] = isOk(processedType.decode(undefined, {}))
+			? processedType
+			: optional(processedType)
+	}
+
+	return struct(deepPartialProps as any) as StructType<DeepPartial<T>>
+}
+
+// Deep Patch //
+////////////////
+export type DeepPatchField<T> = T extends undefined ? T | null : T | undefined
+export type DeepPatchStruct<T extends {}> = {
+	[K in keyof T]?: T[K] extends undefined
+		? DeepPatchField<T[K]> | null
+		: T[K] extends object
+			? T[K] extends any[] ? DeepPatchField<T[K]>
+			: T[K] extends Date ? DeepPatchField<T[K]>
+			: DeepPatchStruct<NonNullable<T[K]>> | undefined
+		: DeepPatchField<T[K]>
+} & {}
+
+function processTypeForDeepPatch(type: Type<any>): Type<any> {
+	if (type instanceof StructType) {
+		return deepPatch(type)
+	}
+
+	if (hasInnerType(type)) {
+		const innerType = (type as any).type
+		return processTypeForDeepPatch(innerType)
+	}
+
+	return type
+}
+
+export function deepPatch<T extends { [K: string]: unknown }>(
+	strct: StructType<T>
+): StructType<DeepPatchStruct<T>> {
+	const deepPatchProps: { [K in keyof T]?: Type<any> } = {}
+
+	for (const p in strct.props) {
+		const type = strct.props[p]
+		if (!type) continue
+
+		const processedType = processTypeForDeepPatch(type)
+
+		// Patch wrapping: optional fields -> nullable, required -> optional
+		if (isOk(type.decode(undefined, {}))) {
+			deepPatchProps[p] = nullable(processedType)
+		} else {
+			deepPatchProps[p] = optional(processedType)
+		}
+	}
+
+	return struct(deepPatchProps as any) as StructType<DeepPatchStruct<T>>
+}
+
 // Pick //
 //////////
 export function pick<T extends { [K: string]: unknown }, K extends keyof T>(strct: StructType<T>, keys: K[]): StructType<Pick<T, K>> {
