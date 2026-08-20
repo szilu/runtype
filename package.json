@@ -1,41 +1,47 @@
 {
-  "name": "@symbion/runtype",
-  "version": "1.2.1",
-  "description": "Runtime type system for TypeScript",
-  "type": "module",
-  "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
-  "files": [
-    "lib"
-  ],
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rimraf lib",
-    "lint": "tslint -p tsconfig.json",
-    "watch": "tsc --watch -p tsconfig.json",
-    "test": "jest",
-    "test-cover": "jest --coverage",
-    "prepublishOnly": "npm run build",
-    "pub": "npm publish --access public"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/szilu/runtype"
-  },
-  "keywords": [
-    "runtime",
-    "type",
-    "checking",
-    "validation",
-    "typescript"
-  ],
-  "author": "Szilárd Hajba <szilu@symbion.hu>",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "jest": "^30.2.0",
-    "rimraf": "^6.1.2",
-    "ts-jest": "^29.4.6",
-    "typescript": "~5.9.3"
-  }
+	"name": "@symbion/runtype",
+	"version": "1.2.1",
+	"description": "Runtime type system for TypeScript",
+	"type": "module",
+	"main": "lib/index.js",
+	"typings": "lib/index.d.ts",
+	"files": [
+		"lib"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"clean": "rimraf lib",
+		"lint": "biome lint --error-on-warnings .",
+		"lint:fix": "biome lint --fix .",
+		"check": "biome check .",
+		"check:fix": "biome check --fix .",
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"watch": "tsc --watch -p tsconfig.json",
+		"test": "jest",
+		"test-cover": "jest --coverage",
+		"prepublishOnly": "npm run clean && npm run build",
+		"pub": "npm publish --access public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/szilu/runtype"
+	},
+	"keywords": [
+		"runtime",
+		"type",
+		"checking",
+		"validation",
+		"typescript"
+	],
+	"author": "Szilárd Hajba <szilu@symbion.hu>",
+	"license": "MIT",
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.9",
+		"@types/jest": "^30.0.0",
+		"jest": "^30.2.0",
+		"rimraf": "^6.1.2",
+		"ts-jest": "^29.4.6",
+		"typescript": "~5.9.3"
+	}
 }
