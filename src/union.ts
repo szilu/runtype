@@ -1,5 +1,5 @@
-import { Result, Err, isOk, isErr } from './utils.js'
-import { Type, DecoderOpts, RTError, error } from './type.js'
+import { type Result, type Err, isOk } from './utils.js'
+import { Type, type DecoderOpts, type RTError, error } from './type.js'
 
 type ElementType<T extends ReadonlyArray<unknown>> = T extends ReadonlyArray<infer ElementType> ? ElementType : never
 

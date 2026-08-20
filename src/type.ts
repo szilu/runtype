@@ -1,4 +1,4 @@
-import { Result, ok, err, Err, isErr, isOk } from './utils.js'
+import { type Result, ok, err, type Err, isErr, isOk } from './utils.js'
 
 //////////
 // Type //
@@ -61,7 +61,7 @@ export abstract class Type<T> {
 		return type
 	}
 
-	async validateBase(v: T, opts: DecoderOpts): Promise<Result<T, RTError>> {
+	async validateBase(v: T, _opts: DecoderOpts): Promise<Result<T, RTError>> {
 		for (const valid of this.validators || []) {
 			const res = valid(v)
 			if (isErr(res)) return res
@@ -73,7 +73,7 @@ export abstract class Type<T> {
 		return ok(v)
 	}
 
-	validateBaseSync(v: T, opts: DecoderOpts): Result<T, RTError> {
+	validateBaseSync(v: T, _opts: DecoderOpts): Result<T, RTError> {
 		if (this.asyncValidators?.length) {
 			throw new AsyncValidatorError(this)
 		}

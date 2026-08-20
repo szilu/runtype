@@ -1,5 +1,5 @@
-import { Result, isErr } from './utils.js'
-import { Type, DecoderOpts, RTError } from './type.js'
+import { type Result, isErr } from './utils.js'
+import { Type, type DecoderOpts, type RTError } from './type.js'
 
 // Lazy //
 //////////

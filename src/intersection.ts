@@ -1,5 +1,5 @@
-import { Result, err, isOk } from './utils.js'
-import { Type, DecoderOpts, RTError } from './type.js'
+import { type Result, err, isOk } from './utils.js'
+import { Type, type DecoderOpts, type RTError } from './type.js'
 import { StructType } from './struct.js'
 
 // Intersection //
@@ -19,7 +19,7 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<T1 & T2, RTError> {
-		let errors: RTError = []
+		const errors: RTError = []
 
 		const res1 = this.type1.decode(u, opts)
 		if (!isOk(res1)) errors.push(...res1.err)
@@ -32,7 +32,7 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 	}
 
 	async validate(v: T1 & T2, opts: DecoderOpts) {
-		let errors: RTError = []
+		const errors: RTError = []
 
 		const res1 = await this.type1.validate(v, opts)
 		if (!isOk(res1)) errors.push(...res1.err)
@@ -45,7 +45,7 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 	}
 
 	validateSync(v: T1 & T2, opts: DecoderOpts): Result<T1 & T2, RTError> {
-		let errors: RTError = []
+		const errors: RTError = []
 
 		const res1 = this.type1.validateSync(v, opts)
 		if (!isOk(res1)) errors.push(...res1.err)
@@ -86,7 +86,7 @@ class IntersectionStructType<T1 extends { [K: string]: unknown }, T2 extends { [
 	// validators; validators attached to struct1/struct2 before intersecting would
 	// be silently dropped. Run their validateBase() first.
 	async validate(v: T1 & T2, opts: DecoderOpts) {
-		let errors: RTError = []
+		const errors: RTError = []
 
 		const res1 = await this.struct1.validateBase(v, opts)
 		if (!isOk(res1)) errors.push(...res1.err)
@@ -99,7 +99,7 @@ class IntersectionStructType<T1 extends { [K: string]: unknown }, T2 extends { [
 	}
 
 	validateSync(v: T1 & T2, opts: DecoderOpts) {
-		let errors: RTError = []
+		const errors: RTError = []
 
 		const res1 = this.struct1.validateBaseSync(v, opts)
 		if (!isOk(res1)) errors.push(...res1.err)

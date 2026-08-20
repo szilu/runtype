@@ -1,5 +1,5 @@
-import { Result, ok, err, isOk, isErr } from './utils.js'
-import { Type, DecoderOpts, RTError, error } from './type.js'
+import { type Result, ok, err, isOk, isErr } from './utils.js'
+import { Type, type DecoderOpts, type RTError, error } from './type.js'
 
 // Array //
 ///////////
@@ -18,7 +18,7 @@ class ArrayType<T> extends Type<T[]> {
 
 	decode(u: unknown, opts: DecoderOpts): Result<T[], RTError> {
 		const ret: T[] = []
-		let errors: RTError = []
+		const errors: RTError = []
 
 		if (!Array.isArray(u) && opts.coerceToArray) {
 			u = opts.coerceToArray(u)

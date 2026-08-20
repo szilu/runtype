@@ -1,5 +1,5 @@
-import { Result, ok, err, isOk, isErr } from './utils.js'
-import { Type, DecoderOpts, RTError, error } from './type.js'
+import { type Result, isErr } from './utils.js'
+import { Type, type DecoderOpts, type RTError, error } from './type.js'
 
 // TaggedUnion //
 /////////////////

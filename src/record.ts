@@ -1,5 +1,5 @@
-import { Result, ok, err, isOk, isErr } from './utils.js'
-import { Type, DecoderOpts, RTError, error } from './type.js'
+import { type Result, ok, err, isOk, isErr } from './utils.js'
+import { Type, type DecoderOpts, type RTError, error } from './type.js'
 
 // Record //
 ////////////
@@ -18,7 +18,7 @@ class RecordType<T> extends Type<Record<string, T>> {
 
 	decode(u: unknown, opts: DecoderOpts): Result<Record<string, T>, RTError> {
 		const ret: Record<string, T> = {}
-		let errors: RTError = []
+		const errors: RTError = []
 
 		if (typeof u != 'object' || Object.prototype.toString.call(u) != '[object Object]') return error('expected Record')
 

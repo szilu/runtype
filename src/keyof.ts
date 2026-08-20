@@ -1,6 +1,6 @@
-import { Result, ok, err, isOk } from './utils.js'
-import { Type, DecoderOpts, RTError, error } from './type.js'
-import { StructType } from './struct.js'
+import { type Result, ok } from './utils.js'
+import { Type, type DecoderOpts, type RTError, error } from './type.js'
+import type { StructType } from './struct.js'
 
 // KeyOf //
 ///////////
@@ -16,7 +16,7 @@ class KeyOfType<T extends { [K: string]: unknown }> extends Type<keyof T> {
 		return Object.keys(this.struct.props).map(v => JSON.stringify(v)).join(' | ')
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecoderOpts) {
 		if (typeof u != 'string'
 			|| !Object.prototype.hasOwnProperty.call(this.struct.props, u)) return error(`expected ${Object.keys(this.struct.props).map(v => JSON.stringify(v)).join(' | ')}`)
 		return ok(u as keyof T)

@@ -9,7 +9,7 @@ declare global {
 }
 
 expect.extend({
-	toBeErr(received: t.Result<any>, pattern?: string) {
+	toBeErr(received: t.Result<any>, _pattern?: string) {
 		return t.isErr(received)
 			? { pass: true, message: () => '' }
 			: { pass: false, message: () => `Expected: Err\nReceived: ${JSON.stringify(received)}` }

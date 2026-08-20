@@ -1,5 +1,5 @@
-import { Result, ok, err, isOk } from './utils.js'
-import { Type, DecoderOpts, RTError, error } from './type.js'
+import { type Result, ok, isOk } from './utils.js'
+import { Type, type DecoderOpts, type RTError, error } from './type.js'
 
 // Constants //
 ///////////////
@@ -16,7 +16,7 @@ class ConstantType<T> extends Type<T> {
 		return JSON.stringify(this.value)
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecoderOpts) {
 		if (u !== this.value) return error('expected ' + JSON.stringify(this.value))
 		return ok(u as T)
 	}
@@ -90,7 +90,7 @@ class StringType extends Type<string> {
 	}
 
 	email() {
-		const pattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+		const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 		return this.addValidator((v: string) => pattern.test(v) ? ok(v)
 			: error(`must be valid email address`))
 	}
@@ -209,16 +209,16 @@ class DateType extends Type<Date> {
 	}
 
 	decode(u: unknown, opts: DecoderOpts) {
-		let date
+		let date: Date | undefined
 
 		switch (typeof u) {
-			case 'object': if (u instanceof Date && !isNaN(u.valueOf())) return ok(u); break
+			case 'object': if (u instanceof Date && !Number.isNaN(u.valueOf())) return ok(u); break
 			case 'string':
 				if (opts.coerceStringToDate || opts.coerceDate || opts.coerceAll) date = new Date(u); break
 			case 'number':
 				if (opts.coerceNumberToDate || opts.coerceDate || opts.coerceAll) date = new Date(u); break
 		}
-		if (date !== undefined && !isNaN(date.valueOf())) {
+		if (date !== undefined && !Number.isNaN(date.valueOf())) {
 			return ok(date)
 		} else {
 			return error('expected date')
@@ -242,7 +242,7 @@ class AnyType extends Type<any> {
 		return 'any'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecoderOpts) {
 		return ok(u as any)
 	}
 
@@ -263,7 +263,7 @@ class UnknownType extends Type<unknown> {
 		return 'unknown'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecoderOpts) {
 		return ok(u)
 	}
 
@@ -284,7 +284,7 @@ class DefinedType extends Type<{}> {
 		return '{}'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecoderOpts) {
 		return u != null ? ok(u as {}) : error('expected defined value')
 	}
 
@@ -305,7 +305,7 @@ class UnknownObjectType extends Type<{}> {
 		return 'object'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecoderOpts) {
 		return typeof u === 'object' && u !== null ? ok(u as {}) : error('expected object')
 	}
 
@@ -389,7 +389,7 @@ class SymbolType extends Type<symbol> {
 		return 'symbol'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecoderOpts) {
 		return typeof u === 'symbol' ? ok(u) : error('expected symbol')
 	}
 
@@ -410,15 +410,15 @@ class VoidType extends Type<void> {
 		return 'void'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecoderOpts) {
 		return u === undefined ? ok(undefined) : error('expected undefined')
 	}
 
-	async validate(v: void, opts: DecoderOpts) {
+	async validate(v: undefined, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: void, opts: DecoderOpts): Result<void, RTError> {
+	validateSync(v: undefined, opts: DecoderOpts): Result<void, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -431,15 +431,15 @@ class NeverType extends Type<never> {
 		return 'never'
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<never, RTError> {
+	decode(_u: unknown, _opts: DecoderOpts): Result<never, RTError> {
 		return error('never type cannot be satisfied')
 	}
 
-	async validate(v: never, opts: DecoderOpts): Promise<Result<never, RTError>> {
+	async validate(_v: never, _opts: DecoderOpts): Promise<Result<never, RTError>> {
 		return error('never type cannot be satisfied')
 	}
 
-	validateSync(v: never, opts: DecoderOpts): Result<never, RTError> {
+	validateSync(_v: never, _opts: DecoderOpts): Result<never, RTError> {
 		return error('never type cannot be satisfied')
 	}
 }
@@ -467,7 +467,7 @@ class LiteralType<T extends ReadonlyArray<Scalar>> extends Type<T[number]> {
 		return this.values.map(v => JSON.stringify(v)).join(' | ')
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecoderOpts) {
 		if (!isScalar(u)
 			|| !this.values.includes(u)) return error(`expected ${this.values.map(v => JSON.stringify(v)).join(' | ')}`)
 		return ok(u as T[number])
