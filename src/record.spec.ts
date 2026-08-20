@@ -4,7 +4,7 @@ import './jest.local.js'
 declare global {
 	namespace jest {
 		interface Matchers<R> {
-			toBeErr(pattern?: string): R;
+			toBeErr(pattern?: string): R
 		}
 	}
 }
@@ -30,11 +30,15 @@ describe('test record type', () => {
 	})
 
 	it('should print complex record type with parens', () => {
-		expect(t.record(t.union(t.number, t.string)).print()).toBe('Record<string, (number | string)>')
+		expect(t.record(t.union(t.number, t.string)).print()).toBe(
+			'Record<string, (number | string)>'
+		)
 	})
 
 	it('should validate record type', async () => {
-		expect(await t.validate(tRecord, { a: 1, b: 2, z: 42 })).toEqual(t.ok({ a: 1, b: 2, z: 42 }))
+		expect(await t.validate(tRecord, { a: 1, b: 2, z: 42 })).toEqual(
+			t.ok({ a: 1, b: 2, z: 42 })
+		)
 	})
 })
 

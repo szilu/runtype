@@ -1,0 +1,112 @@
+{
+	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+	"files": { "ignoreUnknown": false },
+
+	"formatter": {
+		"indentWidth": 4,
+		"lineWidth": 100,
+		"useEditorconfig": true,
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/dist",
+			"!**/lib",
+			"!**/*.min.js",
+			"!**/pnpm-lock.yaml",
+			"!**/*.md"
+		]
+	},
+
+	"linter": {
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/dist",
+			"!**/lib",
+			"!**/*.min.js",
+			"!**/*.min.css"
+		],
+		"rules": {
+			"preset": "recommended",
+
+			"suspicious": {
+				// Intentional: == null checks used throughout codebase
+				"noDoubleEquals": "off",
+				// Off: runtime type machinery needs `as any` casts (props manipulation, duck-typed wrappers)
+				"noExplicitAny": "off",
+				// Off: guarded fallthrough in scalar boolean/date coercion is intentional
+				"noFallthroughSwitchClause": "off",
+				// Off: Object.hasOwn() needs es2022 lib, tsconfig targets es2020
+				"noPrototypeBuiltins": "off",
+				// Intentional: array index keys used where items lack stable IDs
+				"noArrayIndexKey": "off",
+				// Intentional: document.cookie used for SW encryption key management
+				"noDocumentCookie": "off"
+			},
+
+			"style": {
+				// Intentional: non-null assertions used with validated data
+				"noNonNullAssertion": "off",
+				// Intentional: string concatenation preferred in some cases
+				"useTemplate": "off",
+				// Intentional: bare module specifiers used (bundled, not Node.js)
+				"useNodejsImportProtocol": "off",
+				// Intentional: CSS specificity order is managed manually
+				"noDescendingSpecificity": "off"
+			},
+
+			"correctness": {
+				// Too noisy: many existing deps arrays need review
+				"useExhaustiveDependencies": "off",
+				// Off: spec files declare unused consts/aliases as compile-time type-inference tests
+				"noUnusedVariables": "off"
+			},
+
+			"complexity": {
+				// Off: `{}` is a domain type (T.defined / T.unknownObject)
+				"noBannedTypes": "off",
+				// Intentional: function expressions preferred in some patterns
+				"useArrowFunction": "off",
+				// Intentional: !important used in component library overrides
+				"noImportantStyles": "off"
+			},
+
+			// a11y — disabled for now
+			"a11y": {
+				"preset": "none"
+			},
+
+			"security": {
+				// Intentional: used with sanitized content in formillo
+				"noDangerouslySetInnerHtml": "off"
+			}
+		}
+	},
+
+	"javascript": {
+		"jsxRuntime": "reactClassic",
+		"formatter": {
+			"trailingCommas": "none",
+			"semicolons": "asNeeded",
+			"quoteStyle": "single"
+		}
+	},
+
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": {
+					"level": "on",
+					"options": {
+						"groups": [
+							[":BUN:", ":NODE:", ":PACKAGE:", ":PACKAGE_WITH_PROTOCOL:", ":URL:"],
+							":BLANK_LINE:",
+							[":ALIAS:", ":PATH:"]
+						]
+					}
+				}
+			}
+		}
+	}
+}

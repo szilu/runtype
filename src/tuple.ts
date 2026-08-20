@@ -12,7 +12,7 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 	}
 
 	print() {
-		return '[' + this.memberTypes.map(member => member.print()).join(', ') + ']'
+		return '[' + this.memberTypes.map((member) => member.print()).join(', ') + ']'
 	}
 
 	decode(u: unknown, opts: DecoderOpts) {
@@ -31,7 +31,12 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 			if (isOk(res)) {
 				ret[i] = res.ok
 			} else {
-				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+				errors.push(
+					...res.err.map((error) => ({
+						path: ['' + i, ...error.path],
+						error: error.error
+					}))
+				)
 			}
 		}
 		if (errors.length) return err(errors)
@@ -43,7 +48,12 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 		for (let i = 0; i < v.length; i++) {
 			const res = await this.memberTypes[i].validate(v[i], opts)
 			if (isErr(res)) {
-				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+				errors.push(
+					...res.err.map((error) => ({
+						path: ['' + i, ...error.path],
+						error: error.error
+					}))
+				)
 			}
 		}
 		if (errors.length) return err(errors)
@@ -55,7 +65,12 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 		for (let i = 0; i < v.length; i++) {
 			const res = this.memberTypes[i].validateSync(v[i], opts)
 			if (isErr(res)) {
-				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+				errors.push(
+					...res.err.map((error) => ({
+						path: ['' + i, ...error.path],
+						error: error.error
+					}))
+				)
 			}
 		}
 		if (errors.length) return err(errors)
@@ -63,7 +78,9 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 	}
 }
 
-export function tuple<A extends ReadonlyArray<unknown>>(...memberTypes: { [K in keyof A]: Type<A[K]> }): Type<A> {
+export function tuple<A extends ReadonlyArray<unknown>>(
+	...memberTypes: { [K in keyof A]: Type<A[K]> }
+): Type<A> {
 	return new TupleType<A>(memberTypes)
 }
 

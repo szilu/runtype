@@ -1,7 +1,8 @@
 import { type Result, type Err, isOk } from './utils.js'
 import { Type, type DecoderOpts, type RTError, error } from './type.js'
 
-type ElementType<T extends ReadonlyArray<unknown>> = T extends ReadonlyArray<infer ElementType> ? ElementType : never
+type ElementType<T extends ReadonlyArray<unknown>> =
+	T extends ReadonlyArray<infer ElementType> ? ElementType : never
 
 // Union //
 ///////////
@@ -14,7 +15,7 @@ class UnionType<T extends ReadonlyArray<unknown>> extends Type<ElementType<T>> {
 	}
 
 	print() {
-		return this.members.map(member => member.print()).join(' | ')
+		return this.members.map((member) => member.print()).join(' | ')
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<ElementType<T>, RTError> {
@@ -56,7 +57,9 @@ class UnionType<T extends ReadonlyArray<unknown>> extends Type<ElementType<T>> {
 	}
 }
 
-export function union<T extends ReadonlyArray<unknown>>(...members: { [K in keyof T]: Type<T[K]> }): Type<ElementType<T>> {
+export function union<T extends ReadonlyArray<unknown>>(
+	...members: { [K in keyof T]: Type<T[K]> }
+): Type<ElementType<T>> {
 	return new UnionType<T>(members)
 }
 

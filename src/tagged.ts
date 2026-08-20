@@ -14,7 +14,9 @@ class TaggedUnionType<A, T extends string> extends Type<A[keyof A]> {
 	}
 
 	print() {
-		return (Object.values(this.members) as Type<any>[]).map(member => member.print()).join(' | ')
+		return (Object.values(this.members) as Type<any>[])
+			.map((member) => member.print())
+			.join(' | ')
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<A[keyof A], RTError> {
@@ -36,7 +38,10 @@ class TaggedUnionType<A, T extends string> extends Type<A[keyof A]> {
 
 	async validate(v: A[keyof A], opts: DecoderOpts): Promise<Result<A[keyof A], RTError>> {
 		const tag = (v as any)?.[this.tag]
-		const member: Type<any> | undefined = Object.prototype.hasOwnProperty.call(this.members, tag)
+		const member: Type<any> | undefined = Object.prototype.hasOwnProperty.call(
+			this.members,
+			tag
+		)
 			? this.members[tag as keyof A]
 			: undefined
 		if (!member) return error(`unknown tag (${this.tag} = '${String(tag)}')`)
@@ -46,7 +51,10 @@ class TaggedUnionType<A, T extends string> extends Type<A[keyof A]> {
 
 	validateSync(v: A[keyof A], opts: DecoderOpts): Result<A[keyof A], RTError> {
 		const tag = (v as any)?.[this.tag]
-		const member: Type<any> | undefined = Object.prototype.hasOwnProperty.call(this.members, tag)
+		const member: Type<any> | undefined = Object.prototype.hasOwnProperty.call(
+			this.members,
+			tag
+		)
 			? this.members[tag as keyof A]
 			: undefined
 		if (!member) return error(`unknown tag (${this.tag} = '${String(tag)}')`)

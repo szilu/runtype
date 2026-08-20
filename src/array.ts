@@ -31,7 +31,12 @@ class ArrayType<T> extends Type<T[]> {
 			if (isOk(res)) {
 				ret[i] = res.ok
 			} else {
-				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+				errors.push(
+					...res.err.map((error) => ({
+						path: ['' + i, ...error.path],
+						error: error.error
+					}))
+				)
 			}
 		}
 		if (errors.length) return err(errors)
@@ -44,7 +49,12 @@ class ArrayType<T> extends Type<T[]> {
 		for (let i = 0; i < v.length; i++) {
 			const res = await this.memberType.validate(v[i], opts)
 			if (isErr(res)) {
-				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+				errors.push(
+					...res.err.map((error) => ({
+						path: ['' + i, ...error.path],
+						error: error.error
+					}))
+				)
 			}
 		}
 		if (errors.length) return err(errors)
@@ -57,7 +67,12 @@ class ArrayType<T> extends Type<T[]> {
 		for (let i = 0; i < v.length; i++) {
 			const res = this.memberType.validateSync(v[i], opts)
 			if (isErr(res)) {
-				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+				errors.push(
+					...res.err.map((error) => ({
+						path: ['' + i, ...error.path],
+						error: error.error
+					}))
+				)
 			}
 		}
 		if (errors.length) return err(errors)
@@ -67,22 +82,28 @@ class ArrayType<T> extends Type<T[]> {
 	// Validators
 	length(minLen: number, maxLen?: number) {
 		if (maxLen == undefined) {
-			return this.addValidator((v: T[]) => v.length == minLen ? ok(v)
-				: error(`length must be ${minLen}`))
+			return this.addValidator((v: T[]) =>
+				v.length == minLen ? ok(v) : error(`length must be ${minLen}`)
+			)
 		} else {
-			return this.addValidator((v: T[]) => minLen <= v.length && v.length <= maxLen ? ok(v)
-				: error(`length must be between ${minLen} and ${maxLen}`))
+			return this.addValidator((v: T[]) =>
+				minLen <= v.length && v.length <= maxLen
+					? ok(v)
+					: error(`length must be between ${minLen} and ${maxLen}`)
+			)
 		}
 	}
 
 	minLength(len: number) {
-		return this.addValidator((v: T[]) => v.length >= len ? ok(v)
-			: error(`length must be at least ${len}`))
+		return this.addValidator((v: T[]) =>
+			v.length >= len ? ok(v) : error(`length must be at least ${len}`)
+		)
 	}
 
 	maxLength(len: number) {
-		return this.addValidator((v: T[]) => v.length <= len ? ok(v)
-			: error(`length must be at most ${len}`))
+		return this.addValidator((v: T[]) =>
+			v.length <= len ? ok(v) : error(`length must be at most ${len}`)
+		)
 	}
 }
 

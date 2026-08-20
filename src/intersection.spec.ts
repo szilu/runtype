@@ -4,7 +4,7 @@ import './jest.local.js'
 declare global {
 	namespace jest {
 		interface Matchers<R> {
-			toBeErr(pattern?: string): R;
+			toBeErr(pattern?: string): R
 		}
 	}
 }
@@ -26,7 +26,6 @@ describe('test intersection type', () => {
 
 	const tIntersectStruct = t.intersection(tStruct1, tStruct2)
 	type IntersectStruct = t.TypeOf<typeof tIntersectStruct>
-
 
 	// These are compile time tests for the TS type inference :)
 	const b1: Intersect = true
@@ -51,7 +50,9 @@ describe('test intersection type', () => {
 
 	describe('test struct decode', () => {
 		it('should accept struct', () => {
-			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21 })).toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21 }))
+			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21 })).toEqual(
+				t.ok({ s: 'string', n: 42, b: true, n2: 21 })
+			)
 		})
 
 		it('should reject invalid field value', () => {
@@ -63,44 +64,69 @@ describe('test intersection type', () => {
 		})
 
 		it('should reject extra field', () => {
-			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' })).toBeErr()
+			expect(
+				t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' })
+			).toBeErr()
 		})
 
 		it('should accept with "unknownFields": "reject" opt', () => {
-			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21  }, { unknownFields: 'reject' }))
-				.toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21 }))
+			expect(
+				t.decode(
+					tIntersectStruct,
+					{ s: 'string', n: 42, b: true, n2: 21 },
+					{ unknownFields: 'reject' }
+				)
+			).toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21 }))
 		})
 
 		it('should accept extra field with opt', () => {
-			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' }, { unknownFields: 'discard' }))
-				.toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21, e: 'extra' }))
+			expect(
+				t.decode(
+					tIntersectStruct,
+					{ s: 'string', n: 42, b: true, n2: 21, e: 'extra' },
+					{ unknownFields: 'discard' }
+				)
+			).toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21, e: 'extra' }))
 		})
 
 		it('should drop extra field with opt', () => {
-			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' }, { unknownFields: 'drop' }))
-				.toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21 }))
+			expect(
+				t.decode(
+					tIntersectStruct,
+					{ s: 'string', n: 42, b: true, n2: 21, e: 'extra' },
+					{ unknownFields: 'drop' }
+				)
+			).toEqual(t.ok({ s: 'string', n: 42, b: true, n2: 21 }))
 		})
 
 		it('should drop extra field with opt', () => {
-			expect(t.decode(tIntersectStruct, { s: 'string', n: 42, b: true, n2: 21, e: 'extra' }, { unknownFields: 'reject' }))
-			.toBeErr()
+			expect(
+				t.decode(
+					tIntersectStruct,
+					{ s: 'string', n: 42, b: true, n2: 21, e: 'extra' },
+					{ unknownFields: 'reject' }
+				)
+			).toBeErr()
 		})
 
 		it('should print type', () => {
-			expect(tIntersectStruct.print())
-				.toBe('{ s: string, n: number, b?: boolean | undefined } & { s: string, n2: number }')
+			expect(tIntersectStruct.print()).toBe(
+				'{ s: string, n: number, b?: boolean | undefined } & { s: string, n2: number }'
+			)
 		})
 	})
 
 	describe('test struct validate', () => {
 		it('should run validators attached to a constituent struct before intersecting', () => {
-			const tN = t.struct({ n: t.number }).addValidator(v => v.n >= 0 ? t.ok(v)
-				: t.err([{ path: ['n'], error: 'must be non-negative' }]))
+			const tN = t
+				.struct({ n: t.number })
+				.addValidator((v) =>
+					v.n >= 0 ? t.ok(v) : t.err([{ path: ['n'], error: 'must be non-negative' }])
+				)
 			const tIntersect = t.intersection(tN, t.struct({ s: t.string }))
 
 			expect(t.validateSync(tIntersect, { n: -1, s: 'x' })).toBeErr()
-			expect(t.validateSync(tIntersect, { n: 5, s: 'x' }))
-				.toEqual(t.ok({ n: 5, s: 'x' }))
+			expect(t.validateSync(tIntersect, { n: 5, s: 'x' })).toEqual(t.ok({ n: 5, s: 'x' }))
 			expect(t.validate(tIntersect, { n: -1, s: 'x' })).resolves.toBeErr()
 		})
 	})

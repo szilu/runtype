@@ -4,7 +4,7 @@ import './jest.local.js'
 declare global {
 	namespace jest {
 		interface Matchers<R> {
-			toBeErr(pattern?: string): R;
+			toBeErr(pattern?: string): R
 		}
 	}
 }
@@ -15,10 +15,12 @@ describe('test lazy type', () => {
 		s?: Struct
 	}
 
-	const tStruct:t.Type<Struct> = t.lazy(() => t.struct({
-		n: t.number,
-		s: t.optional(tStruct)
-	}))
+	const tStruct: t.Type<Struct> = t.lazy(() =>
+		t.struct({
+			n: t.number,
+			s: t.optional(tStruct)
+		})
+	)
 
 	it('should accept correct type', () => {
 		expect(t.decode(tStruct, { n: 42, s: { n: 42 } })).toEqual(t.ok({ n: 42, s: { n: 42 } }))
@@ -28,7 +30,9 @@ describe('test lazy type', () => {
 	})
 
 	it('should run its own validators', async () => {
-		const tChecked = t.lazy(() => t.number).addValidator(v => v === 42 ? t.ok(v) : t.error('must be 42'))
+		const tChecked = t
+			.lazy(() => t.number)
+			.addValidator((v) => (v === 42 ? t.ok(v) : t.error('must be 42')))
 		expect(await t.validate(tChecked, 42)).toEqual(t.ok(42))
 		expect(await t.validate(tChecked, 1)).toBeErr()
 		expect(t.validateSync(tChecked, 1)).toBeErr()

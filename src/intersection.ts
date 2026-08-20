@@ -58,7 +58,10 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 	}
 }
 
-class IntersectionStructType<T1 extends { [K: string]: unknown }, T2 extends { [K: string]: unknown }> extends StructType<T1 & T2> {
+class IntersectionStructType<
+	T1 extends { [K: string]: unknown },
+	T2 extends { [K: string]: unknown }
+> extends StructType<T1 & T2> {
 	struct1: StructType<T1>
 	struct2: StructType<T2>
 
@@ -66,8 +69,11 @@ class IntersectionStructType<T1 extends { [K: string]: unknown }, T2 extends { [
 		const props: { [K in keyof (T1 & T2)]?: Type<(T1 & T2)[K]> } = {}
 
 		for (const k in struct1.props) {
-			if (struct2.props[k as any]) props[k] =
-				struct1.props[k] !== struct2.props[k as any] as any ? intersection(struct1.props[k], struct2.props[k as any] as any) as any : struct1.props[k]
+			if (struct2.props[k as any])
+				props[k] =
+					struct1.props[k] !== (struct2.props[k as any] as any)
+						? (intersection(struct1.props[k], struct2.props[k as any] as any) as any)
+						: struct1.props[k]
 			else props[k] = struct1.props[k] as any
 		}
 		for (const k in struct2.props) {
@@ -113,7 +119,10 @@ class IntersectionStructType<T1 extends { [K: string]: unknown }, T2 extends { [
 }
 
 export function intersection<T1, T2>(type1: Type<T1>, type2: Type<T2>): Type<T1 & T2>
-export function intersection<T1 extends { [K: string]: unknown }, T2 extends { [K: string]: unknown }>(type1: StructType<T1>, type2: StructType<T2>): StructType<T1 & T2>
+export function intersection<
+	T1 extends { [K: string]: unknown },
+	T2 extends { [K: string]: unknown }
+>(type1: StructType<T1>, type2: StructType<T2>): StructType<T1 & T2>
 export function intersection<T1, T2>(type1: Type<T1>, type2: Type<T2>): Type<T1 & T2> {
 	if (type1 instanceof StructType && type2 instanceof StructType) {
 		return new IntersectionStructType(type1, type2) as any as Type<T1 & T2>

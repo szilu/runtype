@@ -4,8 +4,7 @@ import { Type, type DecoderOpts, type RTError, error, optional, nullable } from 
 // Struct //
 ////////////
 export class StructType<T extends { [K: string]: unknown }> extends Type<
-	{ [K in RequiredKeys<T>]: T[K] }
-	& { [K in OptionalKeys<T>]?: T[K] }
+	{ [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] }
 > {
 	props: { [K in keyof T]: Type<T[K]> }
 	private _keys: (keyof T)[]
@@ -19,18 +18,22 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 	}
 
 	print() {
-		return '{ '
-			+ (Object.keys(this.props) as (keyof T)[]).map(name =>
-				`${String(name)}${isOk(this.props[name].decode(undefined, {})) ? '?' : ''}: ${this.props[name].print()}`
-			).join(', ')
-			+ ' }'
+		return (
+			'{ ' +
+			(Object.keys(this.props) as (keyof T)[])
+				.map(
+					(name) =>
+						`${String(name)}${isOk(this.props[name].decode(undefined, {})) ? '?' : ''}: ${this.props[name].print()}`
+				)
+				.join(', ') +
+			' }'
+		)
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<
-		{ [K in RequiredKeys<T>]: T[K] }
-		& { [K in OptionalKeys<T>]?: T[K] },
-		RTError
-	> {
+	decode(
+		u: unknown,
+		opts: DecoderOpts
+	): Result<{ [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] }, RTError> {
 		if (typeof u !== 'object' || u === null || Array.isArray(u)) {
 			return error('expected object')
 		}
@@ -122,13 +125,17 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 	}
 }
 
-export function struct<T extends { [K: string]: unknown }>(props: { [K in keyof T]: Type<T[K]> }): StructType<T> {
+export function struct<T extends { [K: string]: unknown }>(
+	props: { [K in keyof T]: Type<T[K]> }
+): StructType<T> {
 	return new StructType(props)
 }
 
 // Partial //
 /////////////
-export function partial<T extends { [K: string]: unknown }>(strct: StructType<T>): StructType<Partial<T>> {
+export function partial<T extends { [K: string]: unknown }>(
+	strct: StructType<T>
+): StructType<Partial<T>> {
 	const partialProps: { [K in keyof T]?: Type<T[K] | undefined> } = {}
 	for (const p in strct.props) {
 		const type = strct.props[p] as any
@@ -142,11 +149,16 @@ export function partial<T extends { [K: string]: unknown }>(strct: StructType<T>
 export type PatchField<T> = T extends undefined ? T | null : T | undefined
 export type PatchStruct<T extends {}> = { [K in keyof T]?: PatchField<T[K]> }
 
-export function patch<T extends { [K: string]: unknown }>(strct: StructType<T>): StructType<PatchStruct<T>> {
+export function patch<T extends { [K: string]: unknown }>(
+	strct: StructType<T>
+): StructType<PatchStruct<T>> {
 	const patchProps: { [K in keyof T]?: PatchField<Type<T[K]>> } = {}
 	for (const p in strct.props) {
 		const type = strct.props[p] as any
-		if (type) patchProps[p] = isOk(type.decode(undefined, {})) ? nullable(type) : optional(type) as any
+		if (type)
+			patchProps[p] = isOk(type.decode(undefined, {}))
+				? nullable(type)
+				: (optional(type) as any)
 	}
 	return struct(patchProps as any) as StructType<PatchStruct<T>>
 }
@@ -155,10 +167,12 @@ export function patch<T extends { [K: string]: unknown }>(strct: StructType<T>):
 //////////////////
 export type DeepPartial<T> = {
 	[K in keyof T]?: NonNullable<T[K]> extends object
-		? NonNullable<T[K]> extends any[] ? T[K]           // Arrays: keep as-is
-		: NonNullable<T[K]> extends Date ? T[K]            // Date: keep as-is
-		: DeepPartial<NonNullable<T[K]>> | Extract<T[K], null | undefined>  // Nested object: recurse, preserve nullability
-		: T[K]                                // Primitives: keep as-is
+		? NonNullable<T[K]> extends any[]
+			? T[K] // Arrays: keep as-is
+			: NonNullable<T[K]> extends Date
+				? T[K] // Date: keep as-is
+				: DeepPartial<NonNullable<T[K]>> | Extract<T[K], null | undefined> // Nested object: recurse, preserve nullability
+		: T[K] // Primitives: keep as-is
 } & {}
 
 // Duck-type check for types with inner .type property (OptionalType, NullableType)
@@ -209,13 +223,14 @@ export function deepPartial<T extends { [K: string]: unknown }>(
 // Deep Patch //
 ////////////////
 export type DeepPatchStruct<T extends {}> = {
-	[K in keyof T]?: (
-		NonNullable<T[K]> extends object
-			? NonNullable<T[K]> extends any[] | Date
-				? NonNullable<T[K]>
-				: DeepPatchStruct<NonNullable<T[K]>>
-			: NonNullable<T[K]>
-	) | (undefined extends T[K] ? null : never) | undefined
+	[K in keyof T]?:
+		| (NonNullable<T[K]> extends object
+				? NonNullable<T[K]> extends any[] | Date
+					? NonNullable<T[K]>
+					: DeepPatchStruct<NonNullable<T[K]>>
+				: NonNullable<T[K]>)
+		| (undefined extends T[K] ? null : never)
+		| undefined
 } & {}
 
 function processTypeForDeepPatch(type: Type<any>): Type<any> {
@@ -255,7 +270,10 @@ export function deepPatch<T extends { [K: string]: unknown }>(
 
 // Pick //
 //////////
-export function pick<T extends { [K: string]: unknown }, K extends keyof T>(strct: StructType<T>, keys: K[]): StructType<Pick<T, K>> {
+export function pick<T extends { [K: string]: unknown }, K extends keyof T>(
+	strct: StructType<T>,
+	keys: K[]
+): StructType<Pick<T, K>> {
 	const pickProps: { [K in keyof T]?: Type<T[K]> } = {}
 	for (const p in strct.props) {
 		if (keys.includes(p as any)) pickProps[p] = strct.props[p]
@@ -265,7 +283,10 @@ export function pick<T extends { [K: string]: unknown }, K extends keyof T>(strc
 
 // Omit //
 //////////
-export function omit<T extends { [K: string]: unknown }, K extends keyof T>(strct: StructType<T>, keys: K[]): StructType<Omit<T, K>> {
+export function omit<T extends { [K: string]: unknown }, K extends keyof T>(
+	strct: StructType<T>,
+	keys: K[]
+): StructType<Omit<T, K>> {
 	const omitProps: { [K in keyof T]?: Type<T[K]> } = {}
 	for (const p in strct.props) {
 		if (!keys.includes(p as any)) omitProps[p] = strct.props[p]

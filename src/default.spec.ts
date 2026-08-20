@@ -4,7 +4,7 @@ import './jest.local.js'
 declare global {
 	namespace jest {
 		interface Matchers<R> {
-			toBeErr(pattern?: string): R;
+			toBeErr(pattern?: string): R
 		}
 	}
 }
@@ -124,19 +124,23 @@ describe('test default type', () => {
 		const c: Config = { timeout: 1000, retries: 5, name: 'test' }
 
 		it('should use defaults for missing fields', () => {
-			expect(t.decode(tConfig, { name: 'test' })).toEqual(t.ok({
-				timeout: 5000,
-				retries: 3,
-				name: 'test'
-			}))
+			expect(t.decode(tConfig, { name: 'test' })).toEqual(
+				t.ok({
+					timeout: 5000,
+					retries: 3,
+					name: 'test'
+				})
+			)
 		})
 
 		it('should accept explicit values', () => {
-			expect(t.decode(tConfig, { timeout: 1000, retries: 1, name: 'test' })).toEqual(t.ok({
-				timeout: 1000,
-				retries: 1,
-				name: 'test'
-			}))
+			expect(t.decode(tConfig, { timeout: 1000, retries: 1, name: 'test' })).toEqual(
+				t.ok({
+					timeout: 1000,
+					retries: 1,
+					name: 'test'
+				})
+			)
 		})
 
 		it('should fail if non-default field is missing', () => {

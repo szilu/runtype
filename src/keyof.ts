@@ -13,12 +13,18 @@ class KeyOfType<T extends { [K: string]: unknown }> extends Type<keyof T> {
 	}
 
 	print() {
-		return Object.keys(this.struct.props).map(v => JSON.stringify(v)).join(' | ')
+		return Object.keys(this.struct.props)
+			.map((v) => JSON.stringify(v))
+			.join(' | ')
 	}
 
 	decode(u: unknown, _opts: DecoderOpts) {
-		if (typeof u != 'string'
-			|| !Object.prototype.hasOwnProperty.call(this.struct.props, u)) return error(`expected ${Object.keys(this.struct.props).map(v => JSON.stringify(v)).join(' | ')}`)
+		if (typeof u != 'string' || !Object.prototype.hasOwnProperty.call(this.struct.props, u))
+			return error(
+				`expected ${Object.keys(this.struct.props)
+					.map((v) => JSON.stringify(v))
+					.join(' | ')}`
+			)
 		return ok(u as keyof T)
 	}
 
@@ -32,8 +38,11 @@ class KeyOfType<T extends { [K: string]: unknown }> extends Type<keyof T> {
 
 	// Validators
 	in(...list: (keyof T)[]) {
-		return this.addValidator((v: keyof T) => list.indexOf(v) >= 0 ? ok(v)
-			: error(`must be one of [${list.map(l => JSON.stringify(l)).join(',')}]`))
+		return this.addValidator((v: keyof T) =>
+			list.indexOf(v) >= 0
+				? ok(v)
+				: error(`must be one of [${list.map((l) => JSON.stringify(l)).join(',')}]`)
+		)
 	}
 }
 

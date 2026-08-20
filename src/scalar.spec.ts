@@ -4,7 +4,7 @@ import './jest.local.js'
 declare global {
 	namespace jest {
 		interface Matchers<R> {
-			toBeErr(pattern?: string): R;
+			toBeErr(pattern?: string): R
 		}
 	}
 }
@@ -202,7 +202,9 @@ describe('test basic types', () => {
 
 		// email()
 		it('should accept email', async () => {
-			expect(await t.validate(t.string.email(), 'a@example.com')).toEqual(t.ok('a@example.com'))
+			expect(await t.validate(t.string.email(), 'a@example.com')).toEqual(
+				t.ok('a@example.com')
+			)
 		})
 
 		it('should reject email', async () => {
@@ -375,7 +377,9 @@ describe('test basic types', () => {
 		})
 
 		it('should accept string with coercion', () => {
-			expect(t.decode(t.date, '2000-01-01', { coerceDate: true })).toEqual(t.ok(new Date('2000-01-01')))
+			expect(t.decode(t.date, '2000-01-01', { coerceDate: true })).toEqual(
+				t.ok(new Date('2000-01-01'))
+			)
 		})
 
 		it('should reject non date string with coercion', () => {

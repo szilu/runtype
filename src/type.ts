@@ -35,7 +35,7 @@ export type AsyncValidator<T> = (value: T) => Result<T, RTError> | Promise<Resul
 function cloneType<T extends Type<any>>(type: T): T {
 	const copy: T = Object.create(Object.getPrototypeOf(type))
 	for (const prop in type) {
-		(copy as any)[prop] = (type as any)[prop]
+		;(copy as any)[prop] = (type as any)[prop]
 	}
 	return copy
 }
@@ -57,7 +57,9 @@ export abstract class Type<T> {
 
 	addAsyncValidator(validator: AsyncValidator<T>): this {
 		const type = cloneType(this)
-		type.asyncValidators = this.asyncValidators ? [...this.asyncValidators, validator] : [validator]
+		type.asyncValidators = this.asyncValidators
+			? [...this.asyncValidators, validator]
+			: [validator]
 		return type
 	}
 
@@ -101,27 +103,45 @@ export class AsyncValidatorError extends Error {
 	readonly type: Type<any>
 
 	constructor(type: Type<any>) {
-		super(`validateSync() cannot be used on type '${type.print()}': it has async validators, use validate() instead`)
+		super(
+			`validateSync() cannot be used on type '${type.print()}': it has async validators, use validate() instead`
+		)
 		this.name = 'AsyncValidatorError'
 		this.type = type
 	}
 }
 
 // Compatibility
-export type TypeOf<D> = D extends { decode: (u: unknown, opts: DecoderOpts) => Result<infer T, RTError> } ? T : never
-export type RTError = { path: string[], error: string }[]
+export type TypeOf<D> = D extends {
+	decode: (u: unknown, opts: DecoderOpts) => Result<infer T, RTError>
+}
+	? T
+	: never
+export type RTError = { path: string[]; error: string }[]
 
-export function decode<T>(type: Type<T>, value: unknown, opts: DecoderOpts = {}): Result<T, RTError> {
+export function decode<T>(
+	type: Type<T>,
+	value: unknown,
+	opts: DecoderOpts = {}
+): Result<T, RTError> {
 	return type.decode(value, opts)
 }
 
-export async function validate<T>(type: Type<T>, value: unknown, opts: DecoderOpts = {}): Promise<Result<T, RTError>> {
+export async function validate<T>(
+	type: Type<T>,
+	value: unknown,
+	opts: DecoderOpts = {}
+): Promise<Result<T, RTError>> {
 	const res = type.decode(value, opts)
 	if (isErr(res)) return res
 	return type.validate(res.ok, opts)
 }
 
-export function validateSync<T>(type: Type<T>, value: unknown, opts: DecoderOpts = {}): Result<T, RTError> {
+export function validateSync<T>(
+	type: Type<T>,
+	value: unknown,
+	opts: DecoderOpts = {}
+): Result<T, RTError> {
 	const res = type.decode(value, opts)
 	if (isErr(res)) return res
 	return type.validateSync(res.ok, opts)
@@ -150,9 +170,10 @@ export class DefaultType<T> extends Type<T> {
 	}
 
 	print() {
-		const defVal = typeof this.defaultValue === 'function'
-			? '<factory>'
-			: JSON.stringify(this.defaultValue)
+		const defVal =
+			typeof this.defaultValue === 'function'
+				? '<factory>'
+				: JSON.stringify(this.defaultValue)
 		return `${this.type.print()} = ${defVal}`
 	}
 
@@ -216,9 +237,11 @@ export class NullableType<T> extends Type<T | null | undefined> {
 	}
 
 	print() {
-		return this.type.print()
-			+ (isOk(this.type.decode(null, {})) ? '' : ' | null')
-			+ (isOk(this.type.decode(undefined, {})) ? '' : ' | undefined')
+		return (
+			this.type.print() +
+			(isOk(this.type.decode(null, {})) ? '' : ' | null') +
+			(isOk(this.type.decode(undefined, {})) ? '' : ' | undefined')
+		)
 	}
 
 	decode(u: unknown, opts: DecoderOpts) {
@@ -233,7 +256,10 @@ export class NullableType<T> extends Type<T | null | undefined> {
 		return isErr(res) ? res : this.validateBase(v, opts)
 	}
 
-	validateSync(v: T | null | undefined, opts: DecoderOpts): Result<T | null | undefined, RTError> {
+	validateSync(
+		v: T | null | undefined,
+		opts: DecoderOpts
+	): Result<T | null | undefined, RTError> {
 		if (v === null || v === undefined) return ok(v)
 		const res = this.type.validateSync(v, opts)
 		return isErr(res) ? res : this.validateBaseSync(v, opts)

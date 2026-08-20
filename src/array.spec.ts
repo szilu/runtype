@@ -4,7 +4,7 @@ import './jest.local.js'
 declare global {
 	namespace jest {
 		interface Matchers<R> {
-			toBeErr(pattern?: string): R;
+			toBeErr(pattern?: string): R
 		}
 	}
 }
@@ -26,10 +26,12 @@ describe('test array type', () => {
 	})
 
 	it('should accept string with coerceToArray and coerceScalar', () => {
-		expect(t.decode(tArray, '1,2,42', {
-			coerceScalar: true,
-			coerceToArray: (x: unknown) => typeof x === 'string' ? x.split(',') : x
-		})).toEqual(t.ok([1, 2, 42]))
+		expect(
+			t.decode(tArray, '1,2,42', {
+				coerceScalar: true,
+				coerceToArray: (x: unknown) => (typeof x === 'string' ? x.split(',') : x)
+			})
+		).toEqual(t.ok([1, 2, 42]))
 	})
 
 	it('should reject string without coerce parameters', () => {
@@ -37,9 +39,11 @@ describe('test array type', () => {
 	})
 
 	it('should reject string with just coerceToArray', () => {
-		expect(t.decode(tArray, '1,2,42', {
-			coerceToArray: (x: unknown) => typeof x === 'string' ? x.split(',') : x
-		})).toBeErr()
+		expect(
+			t.decode(tArray, '1,2,42', {
+				coerceToArray: (x: unknown) => (typeof x === 'string' ? x.split(',') : x)
+			})
+		).toBeErr()
 	})
 
 	it('should print array type', () => {

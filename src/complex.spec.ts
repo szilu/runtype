@@ -4,7 +4,7 @@ import './jest.local.js'
 declare global {
 	namespace jest {
 		interface Matchers<R> {
-			toBeErr(pattern?: string): R;
+			toBeErr(pattern?: string): R
 		}
 	}
 }
@@ -16,14 +16,7 @@ describe('test complex types', () => {
 		n: t.number,
 		b: t.optional(t.boolean),
 		a: t.optional(
-			t.array(
-				t.tuple(
-					t.string,
-					t.union(
-						t.boolean, t.nullable(t.number.between(0, 100))
-					)
-				)
-			)
+			t.array(t.tuple(t.string, t.union(t.boolean, t.nullable(t.number.between(0, 100)))))
 		)
 	})
 
@@ -34,12 +27,7 @@ describe('test complex types', () => {
 		s: 'string',
 		n: 42,
 		b: true,
-		a: [
-			[
-				'string',
-				42
-			]
-		]
+		a: [['string', 42]]
 	}
 	// Uncomment these to test TS type inference
 	/*
@@ -58,100 +46,80 @@ describe('test complex types', () => {
 
 	describe('test complex types', () => {
 		it('should accept', () => {
-			expect(t.decode(tComplex, {
-				s: 'string',
-				n: 42,
-				b: true,
-				a: [
-					[
-						'string',
-						42
-					]
-				]
-			})).toEqual(t.ok({
-				s: 'string',
-				n: 42,
-				b: true,
-				a: [
-					[
-						'string',
-						42
-					]
-				]
-			}))
+			expect(
+				t.decode(tComplex, {
+					s: 'string',
+					n: 42,
+					b: true,
+					a: [['string', 42]]
+				})
+			).toEqual(
+				t.ok({
+					s: 'string',
+					n: 42,
+					b: true,
+					a: [['string', 42]]
+				})
+			)
 		})
 
 		it('should reject deep', () => {
-			expect(t.decode(tComplex, {
-				s: 'string',
-				n: 42,
-				b: true,
-				a: [
-					[
-						'string',
-						'42'
-					]
-				]
-			})).toBeErr()
+			expect(
+				t.decode(tComplex, {
+					s: 'string',
+					n: 42,
+					b: true,
+					a: [['string', '42']]
+				})
+			).toBeErr()
 		})
 
 		it('should recursively handle DecoderOpts', () => {
-			expect(t.decode(tComplex, {
-				s: 'string',
-				n: 42,
-				b: true,
-				a: [
-					[
-						'string',
-						'42'
-					]
-				]
-			}, { coerceStringToNumber: true })).toEqual(t.ok({
-				s: 'string',
-				n: 42,
-				b: true,
-				a: [
-					[
-						'string',
-						42
-					]
-				]
-			}))
+			expect(
+				t.decode(
+					tComplex,
+					{
+						s: 'string',
+						n: 42,
+						b: true,
+						a: [['string', '42']]
+					},
+					{ coerceStringToNumber: true }
+				)
+			).toEqual(
+				t.ok({
+					s: 'string',
+					n: 42,
+					b: true,
+					a: [['string', 42]]
+				})
+			)
 		})
 
 		it('should accept deep between() validator', async () => {
-			expect(await t.validate(tComplex, {
-				s: 'string',
-				n: 42,
-				a: [
-					[
-						'string',
-						42
-					]
-				]
-			})).toEqual(t.ok({
-				s: 'string',
-				n: 42,
-				a: [
-					[
-						'string',
-						42
-					]
-				]
-			}))
+			expect(
+				await t.validate(tComplex, {
+					s: 'string',
+					n: 42,
+					a: [['string', 42]]
+				})
+			).toEqual(
+				t.ok({
+					s: 'string',
+					n: 42,
+					a: [['string', 42]]
+				})
+			)
 		})
 
 		it('should reject deep between() validator', async () => {
-			expect(await t.validate(tComplex, {
-				s: 'string',
-				n: 42,
-				a: [
-					[
-						'string',
-						142
-					]
-				]
-			})).toBeErr()
+			expect(
+				await t.validate(tComplex, {
+					s: 'string',
+					n: 42,
+					a: [['string', 142]]
+				})
+			).toBeErr()
 		})
 	})
 })

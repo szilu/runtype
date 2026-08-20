@@ -20,7 +20,8 @@ class RecordType<T> extends Type<Record<string, T>> {
 		const ret: Record<string, T> = {}
 		const errors: RTError = []
 
-		if (typeof u != 'object' || Object.prototype.toString.call(u) != '[object Object]') return error('expected Record')
+		if (typeof u != 'object' || Object.prototype.toString.call(u) != '[object Object]')
+			return error('expected Record')
 
 		for (const k in u) {
 			if (u.hasOwnProperty(k)) {
@@ -28,7 +29,12 @@ class RecordType<T> extends Type<Record<string, T>> {
 				if (isOk(res)) {
 					ret[k] = res.ok
 				} else {
-					errors.push(...res.err.map(error => ({ path: ['' + k, ...error.path], error: error.error })))
+					errors.push(
+						...res.err.map((error) => ({
+							path: ['' + k, ...error.path],
+							error: error.error
+						}))
+					)
 				}
 			}
 		}
@@ -37,14 +43,22 @@ class RecordType<T> extends Type<Record<string, T>> {
 		return ok(ret)
 	}
 
-	async validate(v: Record<string, T>, opts: DecoderOpts): Promise<Result<Record<string, T>, RTError>> {
+	async validate(
+		v: Record<string, T>,
+		opts: DecoderOpts
+	): Promise<Result<Record<string, T>, RTError>> {
 		const errors: RTError = []
 
 		for (const k in v) {
 			if (!Object.prototype.hasOwnProperty.call(v, k)) continue
 			const res = await this.memberType.validate(v[k], opts)
 			if (isErr(res)) {
-				errors.push(...res.err.map(error => ({ path: ['' + k, ...error.path], error: error.error })))
+				errors.push(
+					...res.err.map((error) => ({
+						path: ['' + k, ...error.path],
+						error: error.error
+					}))
+				)
 			}
 		}
 		if (errors.length) return err(errors)
@@ -58,7 +72,12 @@ class RecordType<T> extends Type<Record<string, T>> {
 			if (!Object.prototype.hasOwnProperty.call(v, k)) continue
 			const res = this.memberType.validateSync(v[k], opts)
 			if (isErr(res)) {
-				errors.push(...res.err.map(error => ({ path: ['' + k, ...error.path], error: error.error })))
+				errors.push(
+					...res.err.map((error) => ({
+						path: ['' + k, ...error.path],
+						error: error.error
+					}))
+				)
 			}
 		}
 		if (errors.length) return err(errors)
