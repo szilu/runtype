@@ -12,8 +12,6 @@ declare global {
 describe('test union type', () => {
 	const tStruct = t.struct({ n: t.number, s: t.optional(t.string) })
 	type Struct = t.TypeOf<typeof tStruct>
-	type PartialStruct = t.PartialTypeOf<typeof tStruct>
-	type PatchStruct = t.PatchTypeOf<typeof tStruct>
 
 	const tUnion = t.union(t.number, t.string, tStruct)
 	type Union = t.TypeOf<typeof tUnion>
@@ -45,6 +43,11 @@ describe('test union type', () => {
 
 	it('should print type', () => {
 		expect(tUnion.print()).toBe('number | string | { n: number, s?: string | undefined }')
+	})
+
+	it('should accept a value matching a later member when an earlier one fails validation', () => {
+		const tU = t.union(t.number.min(10), t.number)
+		expect(t.validateSync(tU, 1)).toEqual(t.ok(1))
 	})
 })
 

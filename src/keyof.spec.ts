@@ -31,6 +31,17 @@ describe('test literal type', () => {
 		expect(t.decode(tKeyOf, undefined)).toBeErr()
 	})
 
+	it('should reject inherited object properties as keys', () => {
+		expect(t.decode(tKeyOf, '__proto__')).toBeErr()
+		expect(t.decode(tKeyOf, 'constructor')).toBeErr()
+		expect(t.decode(tKeyOf, 'toString')).toBeErr()
+	})
+
+	it('should reject inherited object properties in validateSync()', () => {
+		expect(t.validateSync(tKeyOf, '__proto__')).toBeErr()
+		expect(t.validateSync(tKeyOf, 'constructor')).toBeErr()
+	})
+
 	it('should print type', () => {
 		expect(tKeyOf.print()).toBe('"i" | "n" | "s"')
 	})

@@ -38,13 +38,31 @@ class RecordType<T> extends Type<Record<string, T>> {
 	}
 
 	async validate(v: Record<string, T>, opts: DecoderOpts): Promise<Result<Record<string, T>, RTError>> {
+		const errors: RTError = []
+
 		for (const k in v) {
+			if (!Object.prototype.hasOwnProperty.call(v, k)) continue
 			const res = await this.memberType.validate(v[k], opts)
 			if (isErr(res)) {
-				return err(res.err.map(error => ({ path: ['' + k, ...error.path], error: error.error })))
+				errors.push(...res.err.map(error => ({ path: ['' + k, ...error.path], error: error.error })))
 			}
 		}
+		if (errors.length) return err(errors)
 		return this.validateBase(v, opts)
+	}
+
+	validateSync(v: Record<string, T>, opts: DecoderOpts): Result<Record<string, T>, RTError> {
+		const errors: RTError = []
+
+		for (const k in v) {
+			if (!Object.prototype.hasOwnProperty.call(v, k)) continue
+			const res = this.memberType.validateSync(v[k], opts)
+			if (isErr(res)) {
+				errors.push(...res.err.map(error => ({ path: ['' + k, ...error.path], error: error.error })))
+			}
+		}
+		if (errors.length) return err(errors)
+		return this.validateBaseSync(v, opts)
 	}
 }
 

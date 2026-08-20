@@ -31,7 +31,7 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 		& { [K in OptionalKeys<T>]?: T[K] },
 		RTError
 	> {
-		if (typeof u !== 'object' || u === null) {
+		if (typeof u !== 'object' || u === null || Array.isArray(u)) {
 			return error('expected object')
 		}
 
@@ -97,6 +97,28 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 
 		if (errors.length) return err(errors)
 		return this.validateBase(v, opts)
+	}
+
+	validateSync(v: T, opts: DecoderOpts) {
+		const struct = v as Record<string, unknown>
+		const errors: RTError = []
+
+		// Validate using cached keys
+		for (const p of this._keys) {
+			const key = p as string
+			const res = this.props[p].validateSync(struct[key] as T[keyof T], opts)
+			if (isErr(res)) {
+				for (const e of res.err) {
+					errors.push({
+						path: e.path.length ? [key, ...e.path] : [key],
+						error: e.error
+					})
+				}
+			}
+		}
+
+		if (errors.length) return err(errors)
+		return this.validateBaseSync(v, opts)
 	}
 }
 
@@ -250,8 +272,5 @@ export function omit<T extends { [K: string]: unknown }, K extends keyof T>(strc
 	}
 	return struct(omitProps as any) as StructType<Omit<T, K>>
 }
-
-// FIXME: deprecated, remove later
-export const type = struct
 
 // vim: ts=4

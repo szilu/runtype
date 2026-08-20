@@ -1,5 +1,5 @@
 import { Result, err, isOk } from './utils.js'
-import { Type, DecoderOpts, RTError, decoderError } from './type.js'
+import { Type, DecoderOpts, RTError } from './type.js'
 import { StructType } from './struct.js'
 
 // Intersection //
@@ -43,6 +43,19 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 		if (errors.length) return err(errors)
 		return this.validateBase(v, opts)
 	}
+
+	validateSync(v: T1 & T2, opts: DecoderOpts): Result<T1 & T2, RTError> {
+		let errors: RTError = []
+
+		const res1 = this.type1.validateSync(v, opts)
+		if (!isOk(res1)) errors.push(...res1.err)
+
+		const res2 = this.type2.validateSync(v, opts)
+		if (!isOk(res2)) errors.push(...res2.err)
+
+		if (errors.length) return err(errors)
+		return this.validateBaseSync(v, opts)
+	}
 }
 
 class IntersectionStructType<T1 extends { [K: string]: unknown }, T2 extends { [K: string]: unknown }> extends StructType<T1 & T2> {
@@ -67,6 +80,35 @@ class IntersectionStructType<T1 extends { [K: string]: unknown }, T2 extends { [
 
 	print() {
 		return this.struct1.print() + ' & ' + this.struct2.print()
+	}
+
+	// The merged StructType.validate only runs the merged props + this struct's own
+	// validators; validators attached to struct1/struct2 before intersecting would
+	// be silently dropped. Run their validateBase() first.
+	async validate(v: T1 & T2, opts: DecoderOpts) {
+		let errors: RTError = []
+
+		const res1 = await this.struct1.validateBase(v, opts)
+		if (!isOk(res1)) errors.push(...res1.err)
+
+		const res2 = await this.struct2.validateBase(v, opts)
+		if (!isOk(res2)) errors.push(...res2.err)
+
+		if (errors.length) return err(errors)
+		return super.validate(v, opts)
+	}
+
+	validateSync(v: T1 & T2, opts: DecoderOpts) {
+		let errors: RTError = []
+
+		const res1 = this.struct1.validateBaseSync(v, opts)
+		if (!isOk(res1)) errors.push(...res1.err)
+
+		const res2 = this.struct2.validateBaseSync(v, opts)
+		if (!isOk(res2)) errors.push(...res2.err)
+
+		if (errors.length) return err(errors)
+		return super.validateSync(v, opts)
 	}
 }
 

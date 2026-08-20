@@ -31,23 +31,37 @@ class ArrayType<T> extends Type<T[]> {
 			if (isOk(res)) {
 				ret[i] = res.ok
 			} else {
-				//errors.push(`${i}: ${res.err}`)
 				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
 			}
 		}
-		//if (errors.length) return err(errors.join('\n'))
 		if (errors.length) return err(errors)
 		return ok(ret)
 	}
 
 	async validate(v: T[], opts: DecoderOpts): Promise<Result<T[], RTError>> {
+		const errors: RTError = []
+
 		for (let i = 0; i < v.length; i++) {
 			const res = await this.memberType.validate(v[i], opts)
 			if (isErr(res)) {
-				return err(res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
 			}
 		}
+		if (errors.length) return err(errors)
 		return this.validateBase(v, opts)
+	}
+
+	validateSync(v: T[], opts: DecoderOpts): Result<T[], RTError> {
+		const errors: RTError = []
+
+		for (let i = 0; i < v.length; i++) {
+			const res = this.memberType.validateSync(v[i], opts)
+			if (isErr(res)) {
+				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+			}
+		}
+		if (errors.length) return err(errors)
+		return this.validateBaseSync(v, opts)
 	}
 
 	// Validators
@@ -72,7 +86,6 @@ class ArrayType<T> extends Type<T[]> {
 	}
 }
 
-//export function array<T>(memberType: Type<T>): Type<T[]> {
 export function array<T>(memberType: Type<T>): ArrayType<T> {
 	return new ArrayType(memberType)
 }

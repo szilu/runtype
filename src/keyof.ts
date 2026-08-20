@@ -18,7 +18,7 @@ class KeyOfType<T extends { [K: string]: unknown }> extends Type<keyof T> {
 
 	decode(u: unknown, opts: DecoderOpts) {
 		if (typeof u != 'string'
-			|| !this.struct.props[u]) return error(`expected ${Object.keys(this.struct.props).map(v => JSON.stringify(v)).join(' | ')}`)
+			|| !Object.prototype.hasOwnProperty.call(this.struct.props, u)) return error(`expected ${Object.keys(this.struct.props).map(v => JSON.stringify(v)).join(' | ')}`)
 		return ok(u as keyof T)
 	}
 
@@ -26,8 +26,11 @@ class KeyOfType<T extends { [K: string]: unknown }> extends Type<keyof T> {
 		return this.validateBase(v, opts)
 	}
 
+	validateSync(v: keyof T, opts: DecoderOpts): Result<keyof T, RTError> {
+		return this.validateBaseSync(v, opts)
+	}
+
 	// Validators
-	//in(...list: Scalar[]) {
 	in(...list: (keyof T)[]) {
 		return this.addValidator((v: keyof T) => list.indexOf(v) >= 0 ? ok(v)
 			: error(`must be one of [${list.map(l => JSON.stringify(l)).join(',')}]`))

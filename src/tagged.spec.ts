@@ -46,6 +46,10 @@ describe('test tagged union type', () => {
 		expect(t.decode(tTaggedUnion, null)).toBeErr()
 	})
 
+	it('should reject array', () => {
+		expect(t.decode(tTaggedUnion, Object.assign([], { type: 'num', n: 42 }))).toBeErr()
+	})
+
 	it('should print type', () => {
 		expect(tTaggedUnion.print()).toBe('{ type: "num", n: number } | { type: "str", s: string }')
 	})
@@ -57,6 +61,14 @@ describe('test tagged union type', () => {
 
 	it('should reject in()', async () => {
 		expect(await t.validate(tTaggedUnion, { type: 'str', s: '' })).toBeErr()
+	})
+
+	it('should reject unknown tag in validate()', async () => {
+		expect(await tTaggedUnion.validate({ type: 'bool' } as any, {})).toBeErr()
+	})
+
+	it('should reject unknown tag in validateSync()', () => {
+		expect(tTaggedUnion.validateSync({ type: 'bool' } as any, {})).toBeErr()
 	})
 })
 

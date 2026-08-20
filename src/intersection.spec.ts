@@ -91,6 +91,19 @@ describe('test intersection type', () => {
 				.toBe('{ s: string, n: number, b?: boolean | undefined } & { s: string, n2: number }')
 		})
 	})
+
+	describe('test struct validate', () => {
+		it('should run validators attached to a constituent struct before intersecting', () => {
+			const tN = t.struct({ n: t.number }).addValidator(v => v.n >= 0 ? t.ok(v)
+				: t.err([{ path: ['n'], error: 'must be non-negative' }]))
+			const tIntersect = t.intersection(tN, t.struct({ s: t.string }))
+
+			expect(t.validateSync(tIntersect, { n: -1, s: 'x' })).toBeErr()
+			expect(t.validateSync(tIntersect, { n: 5, s: 'x' }))
+				.toEqual(t.ok({ n: 5, s: 'x' }))
+			expect(t.validate(tIntersect, { n: -1, s: 'x' })).resolves.toBeErr()
+		})
+	})
 })
 
 // vim: ts=4

@@ -3,7 +3,6 @@ import { Type, DecoderOpts, RTError, error } from './type.js'
 
 // Tuple //
 ///////////
-// class TupleType<A extends ReadonlyArray<unknown>> extends Type<{ [K in keyof A]: A[K] }> {
 class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 	memberTypes: { [K in keyof A]: Type<A[K]> }
 
@@ -32,11 +31,9 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 			if (isOk(res)) {
 				ret[i] = res.ok
 			} else {
-				//errors.push(`${i}: ${res.err}`)
 				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
 			}
 		}
-		//if (errors.length) return err(errors.join('\n'))
 		if (errors.length) return err(errors)
 		return ok(ret as A)
 	}
@@ -52,9 +49,20 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 		if (errors.length) return err(errors)
 		return this.validateBase(v, opts)
 	}
+
+	validateSync(v: A, opts: DecoderOpts): Result<A, RTError> {
+		let errors: RTError = []
+		for (let i = 0; i < v.length; i++) {
+			const res = this.memberTypes[i].validateSync(v[i], opts)
+			if (isErr(res)) {
+				errors.push(...res.err.map(error => ({ path: ['' + i, ...error.path], error: error.error })))
+			}
+		}
+		if (errors.length) return err(errors)
+		return this.validateBaseSync(v, opts)
+	}
 }
 
-// export function tuple<A extends ReadonlyArray<unknown>>(...memberTypes: { [K in keyof A]: Type<A[K]> }): Type<{ [K in keyof A]: A[K] }> {
 export function tuple<A extends ReadonlyArray<unknown>>(...memberTypes: { [K in keyof A]: Type<A[K]> }): Type<A> {
 	return new TupleType<A>(memberTypes)
 }

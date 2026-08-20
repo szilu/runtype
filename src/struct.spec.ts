@@ -83,6 +83,22 @@ describe('test struct type', () => {
 			expect(t.decode(tStruct, [42])).toBeErr()
 		})
 
+		it('should reject array for an all-optional struct', () => {
+			const tAllOpt = t.struct({ b: t.optional(t.boolean) })
+			expect(t.decode(tAllOpt, [])).toBeErr()
+			expect(t.decode(tAllOpt, [1, 2], { unknownFields: 'drop' })).toBeErr()
+		})
+
+		it('should reject array with unknownFields opts', () => {
+			expect(t.decode(tStruct, [], { unknownFields: 'drop' })).toBeErr()
+			expect(t.decode(tStruct, [], { unknownFields: 'discard' })).toBeErr()
+		})
+
+		it('should accept a class instance', () => {
+			class P { s = 'string'; n = 42 }
+			expect(t.decode(tStruct, new P())).toEqual(t.ok({ s: 'string', n: 42 }))
+		})
+
 		it('should reject invalid field value', () => {
 			expect(t.decode(tStruct, { s: 'string', n: '42', b: true })).toBeErr()
 		})

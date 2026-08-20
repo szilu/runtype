@@ -20,20 +20,10 @@ export function isErr<E>(r: Result<any, E>): r is Err<E> { return 'err' in r }
 
 // TS helpers //
 ////////////////
-export type Narrow<T> = T extends string | number | boolean ? T : never
-
 export type OptionalKeys<T> = Exclude<{ [P in keyof T]: undefined extends T[P] ? P : never }[keyof T], undefined>
 export type RequiredKeys<T> = Exclude<{ [P in keyof T]: undefined extends T[P] ? never : P }[keyof T], undefined>
 export type RequireFields<T> =
 	{ [K in RequiredKeys<T>]: T[K] }
 	& { [K in OptionalKeys<T>]-?: T[K] | undefined }
-
-// Other helper funcs //
-////////////////////////
-export function isEmptyObject(obj: unknown) {
-	if (typeof obj !== 'object' || obj === null) return false
-	for (const k in obj) return false
-	return true
-}
 
 // vim: ts=4

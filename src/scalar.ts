@@ -24,6 +24,10 @@ class ConstantType<T> extends Type<T> {
 	async validate(v: T, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
 	}
+
+	validateSync(v: T, opts: DecoderOpts): Result<T, RTError> {
+		return this.validateBaseSync(v, opts)
+	}
 }
 
 export const undefinedValue = new ConstantType(undefined)
@@ -48,6 +52,10 @@ class StringType extends Type<string> {
 
 	async validate(v: string, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
+	}
+
+	validateSync(v: string, opts: DecoderOpts): Result<string, RTError> {
+		return this.validateBaseSync(v, opts)
 	}
 
 	// Validators
@@ -110,6 +118,10 @@ class NumberType extends Type<number> {
 
 	async validate(v: number, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
+	}
+
+	validateSync(v: number, opts: DecoderOpts): Result<number, RTError> {
+		return this.validateBaseSync(v, opts)
 	}
 
 	// Validators
@@ -175,6 +187,10 @@ class BooleanType extends Type<boolean> {
 		return this.validateBase(v, opts)
 	}
 
+	validateSync(v: boolean, opts: DecoderOpts): Result<boolean, RTError> {
+		return this.validateBaseSync(v, opts)
+	}
+
 	true() {
 		return this.addValidator((v: boolean) => v ? ok(v) : error('must be true'))
 	}
@@ -212,6 +228,10 @@ class DateType extends Type<Date> {
 	async validate(v: Date, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
 	}
+
+	validateSync(v: Date, opts: DecoderOpts): Result<Date, RTError> {
+		return this.validateBaseSync(v, opts)
+	}
 }
 export const date = new DateType()
 
@@ -229,6 +249,10 @@ class AnyType extends Type<any> {
 	async validate(v: any, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
 	}
+
+	validateSync(v: any, opts: DecoderOpts): Result<any, RTError> {
+		return this.validateBaseSync(v, opts)
+	}
 }
 export const any = new AnyType()
 
@@ -240,14 +264,39 @@ class UnknownType extends Type<unknown> {
 	}
 
 	decode(u: unknown, opts: DecoderOpts) {
-		return u != null ? ok(u as {}) : error('expected anything but undefined')
+		return ok(u)
+	}
+
+	async validate(v: unknown, opts: DecoderOpts) {
+		return this.validateBase(v, opts)
+	}
+
+	validateSync(v: unknown, opts: DecoderOpts): Result<unknown, RTError> {
+		return this.validateBaseSync(v, opts)
+	}
+}
+export const unknown = new UnknownType()
+
+// Defined //
+/////////////
+class DefinedType extends Type<{}> {
+	print() {
+		return '{}'
+	}
+
+	decode(u: unknown, opts: DecoderOpts) {
+		return u != null ? ok(u as {}) : error('expected defined value')
 	}
 
 	async validate(v: {}, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
 	}
+
+	validateSync(v: {}, opts: DecoderOpts): Result<{}, RTError> {
+		return this.validateBaseSync(v, opts)
+	}
 }
-export const unknown = new UnknownType()
+export const defined = new DefinedType()
 
 // UnknownObject //
 ///////////////////
@@ -262,6 +311,10 @@ class UnknownObjectType extends Type<{}> {
 
 	async validate(v: {}, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
+	}
+
+	validateSync(v: {}, opts: DecoderOpts): Result<{}, RTError> {
+		return this.validateBaseSync(v, opts)
 	}
 }
 export const unknownObject = new UnknownObjectType()
@@ -290,6 +343,10 @@ class BigIntType extends Type<bigint> {
 
 	async validate(v: bigint, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
+	}
+
+	validateSync(v: bigint, opts: DecoderOpts): Result<bigint, RTError> {
+		return this.validateBaseSync(v, opts)
 	}
 
 	// Validators
@@ -339,6 +396,10 @@ class SymbolType extends Type<symbol> {
 	async validate(v: symbol, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
 	}
+
+	validateSync(v: symbol, opts: DecoderOpts): Result<symbol, RTError> {
+		return this.validateBaseSync(v, opts)
+	}
 }
 export const symbol = new SymbolType()
 
@@ -356,6 +417,10 @@ class VoidType extends Type<void> {
 	async validate(v: void, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
 	}
+
+	validateSync(v: void, opts: DecoderOpts): Result<void, RTError> {
+		return this.validateBaseSync(v, opts)
+	}
 }
 export const voidType = new VoidType()
 
@@ -371,6 +436,10 @@ class NeverType extends Type<never> {
 	}
 
 	async validate(v: never, opts: DecoderOpts): Promise<Result<never, RTError>> {
+		return error('never type cannot be satisfied')
+	}
+
+	validateSync(v: never, opts: DecoderOpts): Result<never, RTError> {
 		return error('never type cannot be satisfied')
 	}
 }
@@ -406,6 +475,10 @@ class LiteralType<T extends ReadonlyArray<Scalar>> extends Type<T[number]> {
 
 	async validate(v: T[number], opts: DecoderOpts) {
 		return this.validateBase(v, opts)
+	}
+
+	validateSync(v: T[number], opts: DecoderOpts): Result<T[number], RTError> {
+		return this.validateBaseSync(v, opts)
 	}
 
 	// Validators

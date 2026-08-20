@@ -74,16 +74,54 @@ describe('test basic types', () => {
 			expect(t.decode(t.unknown, {})).toEqual(t.ok({}))
 		})
 
-		it('should reject undefined', () => {
-			expect(t.decode(t.unknown, undefined)).toBeErr()
+		it('should accept undefined', () => {
+			expect(t.decode(t.unknown, undefined)).toEqual(t.ok(undefined))
 		})
 
-		it('should reject null', () => {
-			expect(t.decode(t.unknown, null)).toBeErr()
+		it('should accept null', () => {
+			expect(t.decode(t.unknown, null)).toEqual(t.ok(null))
 		})
 
 		it('should print type', () => {
 			expect(t.unknown.print()).toBe('unknown')
+		})
+	})
+
+	describe('test defined type', () => {
+		it('should accept string', () => {
+			expect(t.decode(t.defined, 'some string')).toEqual(t.ok('some string'))
+		})
+
+		it('should accept falsy scalars', () => {
+			expect(t.decode(t.defined, 0)).toEqual(t.ok(0))
+			expect(t.decode(t.defined, '')).toEqual(t.ok(''))
+			expect(t.decode(t.defined, false)).toEqual(t.ok(false))
+		})
+
+		it('should accept object', () => {
+			expect(t.decode(t.defined, {})).toEqual(t.ok({}))
+		})
+
+		it('should reject undefined', () => {
+			expect(t.decode(t.defined, undefined)).toBeErr()
+		})
+
+		it('should reject null', () => {
+			expect(t.decode(t.defined, null)).toBeErr()
+		})
+
+		it('should print type', () => {
+			expect(t.defined.print()).toBe('{}')
+		})
+	})
+
+	describe('test unknown and defined in a struct', () => {
+		it('should print unknown field as optional', () => {
+			expect(t.struct({ x: t.unknown }).print()).toBe('{ x?: unknown }')
+		})
+
+		it('should print defined field as required', () => {
+			expect(t.struct({ x: t.defined }).print()).toBe('{ x: {} }')
 		})
 	})
 
