@@ -28,8 +28,6 @@ describe('test complex types', () => {
 	})
 
 	type Complex = t.TypeOf<typeof tComplex>
-	type PartialComplex = t.PartialTypeOf<typeof tComplex>
-	type PatchComplex = t.PatchTypeOf<typeof tComplex>
 
 	// These are compile time tests for the TS type inference :)
 	const complex1: Complex = {

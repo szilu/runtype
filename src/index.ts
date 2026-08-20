@@ -18,9 +18,4 @@ export * from './tagged.js'
 
 export * from './keyof.js'
 
-export * from './schema.js'
-
-export { validateOrig } from './validator.js'
-//export type { Validator } from './validator'
-
 // vim: ts=4
