@@ -10,19 +10,11 @@ echo "Installing git hooks..."
 cat > "$PRE_COMMIT" << 'EOF'
 #!/bin/sh
 
-echo "Running lint check..."
+echo "Running biome check..."
 
-if ! pnpm lint; then
+if ! pnpm check; then
     echo ""
-    echo "Lint check failed. Please run 'pnpm lint:fix' to fix lint issues."
-    exit 1
-fi
-
-echo "Running format check..."
-
-if ! pnpm format:check; then
-    echo ""
-    echo "Format check failed. Please run 'pnpm format' to fix formatting issues."
+    echo "Check failed. Please run 'pnpm check:fix' to fix lint, format and import order."
     exit 1
 fi
 EOF
