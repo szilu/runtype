@@ -115,6 +115,31 @@ describe('test basic types', () => {
 		})
 	})
 
+	describe('test unknownObject type', () => {
+		it('should accept objects', () => {
+			expect(t.decode(t.unknownObject, {})).toEqual(t.ok({}))
+			expect(t.decode(t.unknownObject, [])).toEqual(t.ok([]))
+		})
+
+		it('should reject null and undefined', () => {
+			expect(t.decode(t.unknownObject, null)).toBeErr()
+			expect(t.decode(t.unknownObject, undefined)).toBeErr()
+		})
+
+		it('should reject primitives', () => {
+			expect(t.decode(t.unknownObject, 'x')).toBeErr()
+			expect(t.decode(t.unknownObject, 1)).toBeErr()
+		})
+
+		it('should reject functions', () => {
+			expect(t.decode(t.unknownObject, () => 1)).toBeErr()
+		})
+
+		it('should print type', () => {
+			expect(t.unknownObject.print()).toBe('object')
+		})
+	})
+
 	describe('test unknown and defined in a struct', () => {
 		it('should print unknown field as optional', () => {
 			expect(t.struct({ x: t.unknown }).print()).toBe('{ x?: unknown }')

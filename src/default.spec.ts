@@ -33,6 +33,11 @@ describe('test default type', () => {
 		it('should print type', () => {
 			expect(tWithDefault.print()).toBe('number = 0')
 		})
+
+		it('should parenthesize a default inside optional()/nullable()', () => {
+			expect(t.optional(t.withDefault(t.number, 7)).print()).toBe('(number = 7) | undefined')
+			expect(t.nullable(t.withDefault(t.number, 7)).print()).toBe('(number = 7) | null')
+		})
 	})
 
 	describe('with string default', () => {
@@ -89,6 +94,49 @@ describe('test default type', () => {
 			t.decode(tArray, undefined)
 			t.decode(tArray, undefined)
 			expect(dates.length).toBe(2)
+		})
+
+		it('should reject every object or array default, frozen included', () => {
+			// A stored value would be returned by reference, so every decode would share
+			// one instance. Object.freeze() is shallow and does not stop Date's setTime(),
+			// so a factory is the only safe form.
+			// @ts-expect-error object defaults are rejected at compile time too
+			expect(() => t.struct({}).default({})).toThrow(TypeError)
+			// @ts-expect-error object defaults are rejected at compile time too
+			expect(() => t.array(t.string).default([])).toThrow(TypeError)
+			// @ts-expect-error object defaults are rejected at compile time too
+			expect(() => t.date.default(new Date())).toThrow(TypeError)
+			// @ts-expect-error object defaults are rejected at compile time too
+			expect(() => t.struct({}).default(Object.freeze({}))).toThrow(TypeError)
+			expect(() =>
+				// @ts-expect-error object defaults are rejected at compile time too
+				t.array(t.string).default(Object.freeze([]) as unknown as string[])
+			).toThrow(TypeError)
+		})
+
+		it('should still accept a factory for an object default', () => {
+			const tS = t.struct({ a: t.string }).default(() => ({ a: 'x' }))
+			expect(t.decode(tS, undefined)).toEqual(t.ok({ a: 'x' }))
+		})
+
+		it('should decode the default value through the inner type', () => {
+			const tBad = t
+				.struct({ a: t.string })
+				.default(() => ({ a: 1 }) as unknown as { a: string })
+			expect(t.decode(tBad, undefined)).toBeErr()
+		})
+
+		it('should still accept primitive and factory defaults', () => {
+			expect(t.decode(t.number.default(0), undefined)).toEqual(t.ok(0))
+			expect(t.decode(t.string.default('x'), undefined)).toEqual(t.ok('x'))
+			expect(
+				t.isOk(
+					t.decode(
+						t.date.default(() => new Date()),
+						undefined
+					)
+				)
+			).toBe(true)
 		})
 	})
 
@@ -155,6 +203,44 @@ describe('test default type', () => {
 			expect(t.decode(tOptionalWithDefault, undefined)).toEqual(t.ok(0))
 			expect(t.decode(tOptionalWithDefault, 42)).toEqual(t.ok(42))
 		})
+	})
+})
+
+describe('default() under optional()/nullable()', () => {
+	it('should apply the default through optional()', () => {
+		expect(t.decode(t.optional(t.withDefault(t.number, 7)), undefined)).toEqual(t.ok(7))
+	})
+
+	it('should apply the default through nullable()', () => {
+		const tND = t.nullable(t.withDefault(t.number, 7))
+		expect(t.decode(tND, undefined)).toEqual(t.ok(7))
+		expect(t.decode(tND, null)).toEqual(t.ok(null))
+	})
+
+	it('should still decode undefined for a plain optional()', () => {
+		expect(t.decode(t.optional(t.number), undefined)).toEqual(t.ok(undefined))
+	})
+})
+
+it('should not let decoder coercion fire on an absent optional', () => {
+	const opts = { coerceToArray: (v: unknown) => (Array.isArray(v) ? v : [v]) }
+	expect(t.decode(t.optional(t.array(t.string)), undefined, opts)).toEqual(t.ok(undefined))
+	expect(t.decode(t.nullable(t.array(t.string)), null, opts)).toEqual(t.ok(null))
+})
+
+describe('factory defaults and type introspection', () => {
+	it('should not invoke the factory from print() or the struct combinators', () => {
+		let calls = 0
+		const tS = t.struct({
+			n: t.number.default(() => {
+				calls++
+				return 1
+			})
+		})
+		tS.print()
+		t.partial(tS)
+		t.deepPartial(tS)
+		expect(calls).toBe(0)
 	})
 })
 

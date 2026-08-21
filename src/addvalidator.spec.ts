@@ -9,7 +9,7 @@ declare global {
 	}
 }
 
-async function expectRejected(tType: t.Type<any>, value: unknown) {
+async function expectRejected<T>(tType: t.Type<T>, value: unknown) {
 	expect(await t.validate(tType, value)).toBeErr()
 	expect(t.validateSync(tType, value)).toBeErr()
 }
@@ -130,6 +130,98 @@ describe('test addValidator() copy-on-write', () => {
 			expect(tChecked.props).toBe(tS.props)
 			expect(t.decode(tChecked, { s: 'string', n: 42 })).toEqual(t.ok({ s: 'string', n: 42 }))
 		})
+	})
+})
+
+describe('struct combinators keep the source validators', () => {
+	// A struct-level validator, plus validators on a nested struct, record, union and
+	// lazy field - every combinator rebuilds these types and must carry them over.
+	const tPositive = t.number.addValidator((v) => (v > 0 ? t.ok(v) : t.error('must be > 0')))
+	const tNested = t
+		.struct({ n: tPositive })
+		.addValidator((v) => (v.n !== 13 ? t.ok(v) : t.error('unlucky')))
+	const tSrc = t.struct({
+		nested: tNested,
+		rec: t.record(tPositive),
+		uni: t.union(tPositive, t.string),
+		lzy: t.lazy(() => tPositive)
+	})
+	const tChecked = tSrc.addValidator((v) => t.ok(v))
+
+	const bad = {
+		nested: { n: -1 },
+		rec: { k: -1 },
+		uni: -1,
+		lzy: -1
+	}
+
+	// The struct-level validator was written against a shape the derived type no longer
+	// has, so it is dropped - re-attach it explicitly if it still applies.
+	it('should drop the struct-level validator', () => {
+		expect(t.partial(tChecked).validators).toBeUndefined()
+		expect(t.patch(tChecked).validators).toBeUndefined()
+		expect(t.deepPartial(tChecked).validators).toBeUndefined()
+		expect(t.deepPatch(tChecked).validators).toBeUndefined()
+		expect(t.pick(tChecked, ['rec']).validators).toBeUndefined()
+		expect(t.omit(tChecked, ['rec']).validators).toBeUndefined()
+	})
+
+	it('should keep field validators through partial()/patch()', async () => {
+		await expectRejected(t.partial(tSrc), bad)
+		await expectRejected(t.patch(tSrc), bad)
+	})
+
+	it('should keep field validators through deepPartial()/deepPatch()', async () => {
+		await expectRejected(t.deepPartial(tSrc), bad)
+		await expectRejected(t.deepPatch(tSrc), bad)
+	})
+
+	it('should keep field validators through pick()/omit()', async () => {
+		await expectRejected(t.pick(tSrc, ['rec']), { rec: { k: -1 } })
+		await expectRejected(t.omit(tSrc, ['nested', 'uni', 'lzy']), { rec: { k: -1 } })
+	})
+
+	it('should keep validators on a default and an optional through patch()', async () => {
+		const unlucky = (v: unknown) => (v !== 13 ? t.ok(v as number) : t.error('unlucky'))
+		const tDef = t.withDefault(t.number, 0).addValidator(unlucky)
+		const tOpt = t.optional(t.number).addValidator(unlucky)
+		const tPatchSrc = t.struct({ d: tDef, o: tOpt })
+
+		await expectRejected(t.patch(tPatchSrc), { d: 13 })
+		await expectRejected(t.deepPatch(tPatchSrc), { o: 13 })
+		// copy-on-write: the shared source types are untouched
+		expect(tDef.validators?.length).toBe(1)
+		expect(tOpt.validators?.length).toBe(1)
+	})
+
+	it('should keep the nested struct validator through deepPartial()', async () => {
+		await expectRejected(t.deepPartial(tSrc), { nested: { n: 13 } })
+		expect(await t.validate(t.deepPartial(tSrc), { nested: { n: 1 } })).toEqual(
+			t.ok({ nested: { n: 1 } })
+		)
+	})
+})
+
+describe('a throwing validator', () => {
+	const tThrows = t.number.addValidator(() => {
+		throw new Error('boom')
+	})
+
+	it('should become an Err instead of escaping', async () => {
+		expect(t.validateSync(tThrows, 1)).toBeErr('validator threw: boom')
+		expect(await t.validate(tThrows, 1)).toBeErr('validator threw: boom')
+	})
+
+	it('should become an Err when an async validator rejects', async () => {
+		const tAsync = t.number.addAsyncValidator(() => Promise.reject(new Error('async boom')))
+		expect(await t.validate(tAsync, 1)).toBeErr('validator threw: async boom')
+	})
+
+	it('should not escape when deepPartial() makes a validated field absent', () => {
+		const tInner = t
+			.struct({ name: t.string })
+			.addValidator((v) => (v.name.length > 3 ? t.ok(v) : t.error('too short')))
+		expect(t.validateSync(t.deepPartial(t.struct({ inner: tInner })), { inner: {} })).toBeErr()
 	})
 })
 

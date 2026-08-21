@@ -92,7 +92,7 @@ describe('test validateSync()', () => {
 			const tU = t.union(t.number.min(10), t.string)
 			expect(t.validateSync(tU, 'a')).toEqual(t.ok('a'))
 			expect(t.validateSync(tU, 1)).toEqual(
-				t.err([{ path: [], error: 'must be at least 10' }])
+				t.err([{ path: [], error: 'member 0: must be at least 10' }])
 			)
 		})
 
@@ -362,6 +362,17 @@ describe('test validateSync()', () => {
 			expect(() => t.validateSync(tDeep, { items: [{ s: 'a' }] })).toThrow(
 				t.AsyncValidatorError
 			)
+		})
+
+		it('should throw even when a field also failed validation', () => {
+			const tS = t.struct({ n: t.number.min(10) }).addAsyncValidator(async (v) => t.ok(v))
+			expect(() => t.validateSync(tS, { n: 1 })).toThrow(t.AsyncValidatorError)
+		})
+
+		it('should not downgrade a nested AsyncValidatorError to an Err', () => {
+			const tAsync = t.number.addAsyncValidator(async (v) => t.ok(v))
+			const tOuter = t.number.addValidator((v) => t.validateSync(tAsync, v))
+			expect(() => t.validateSync(tOuter, 1)).toThrow(t.AsyncValidatorError)
 		})
 	})
 })

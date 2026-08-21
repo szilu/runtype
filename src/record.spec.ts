@@ -17,6 +17,12 @@ describe('test record type', () => {
 		expect(t.decode(tRecord, { a: 1, b: 2, z: 42 })).toEqual(t.ok({ a: 1, b: 2, z: 42 }))
 	})
 
+	it('should accept null-prototype objects', () => {
+		const o: { [k: string]: unknown } = Object.create(null)
+		o.a = 1
+		expect(t.decode(tRecord, o)).toEqual(t.ok({ a: 1 }))
+	})
+
 	it('should reject non record', () => {
 		expect(t.decode(tRecord, [])).toBeErr()
 	})

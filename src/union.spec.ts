@@ -49,6 +49,29 @@ describe('test union type', () => {
 		const tU = t.union(t.number.min(10), t.number)
 		expect(t.validateSync(tU, 1)).toEqual(t.ok(1))
 	})
+
+	it('should attribute each member reason and report all of them', () => {
+		const res = t.decode(t.union(t.string, t.number), true)
+		expect(t.isErr(res) && res.err.map((e) => e.error)).toEqual([
+			'member 0: expected string',
+			'member 1: expected number'
+		])
+	})
+
+	it('should report every candidate members validation error, not just the first', () => {
+		const tU = t.union(t.string.minLength(5), t.string.matches(/^z/))
+		const res = t.validateSync(tU, 'ab')
+		expect(t.isErr(res) && res.err.length).toBe(2)
+	})
+
+	it('should report only the closest matching member', () => {
+		const tU = t.union(
+			t.struct({ k: t.literal('a'), v: t.number }),
+			t.struct({ k: t.literal('b'), w: t.string, x: t.string })
+		)
+		const res = t.decode(tU, { k: 'a', v: 'not a number' })
+		expect(t.isErr(res) && res.err.map((e) => e.error)).toEqual(['member 0: expected number'])
+	})
 })
 
 // vim: ts=4

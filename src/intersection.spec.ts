@@ -117,7 +117,7 @@ describe('test intersection type', () => {
 	})
 
 	describe('test struct validate', () => {
-		it('should run validators attached to a constituent struct before intersecting', () => {
+		it('should run validators attached to a constituent struct', () => {
 			const tN = t
 				.struct({ n: t.number })
 				.addValidator((v) =>
@@ -128,6 +128,28 @@ describe('test intersection type', () => {
 			expect(t.validateSync(tIntersect, { n: -1, s: 'x' })).toBeErr()
 			expect(t.validateSync(tIntersect, { n: 5, s: 'x' })).toEqual(t.ok({ n: 5, s: 'x' }))
 			expect(t.validate(tIntersect, { n: -1, s: 'x' })).resolves.toBeErr()
+		})
+
+		it('should keep constituent validators through deepPartial()', () => {
+			const tA = t
+				.struct({ a: t.string })
+				.addValidator((v) => (v.a === 'ok' ? t.ok(v) : t.error('a must be ok')))
+			const tI = t.intersection(tA, t.struct({ b: t.number }))
+
+			expect(t.validateSync(tI, { a: 'bad', b: 1 })).toBeErr('a must be ok')
+			expect(t.validateSync(t.deepPartial(t.struct({ i: tI })), { i: { a: 'bad' } })).toBeErr(
+				'a must be ok'
+			)
+		})
+		it('should merge fields named like Object.prototype members', () => {
+			const tI = t.intersection(t.struct({ a: t.string }), t.struct({ toString: t.string }))
+			expect(t.decode(tI, { a: 'x', toString: 'y' })).toEqual(t.ok({ a: 'x', toString: 'y' }))
+		})
+
+		it('should leave validators undefined when neither side has any', () => {
+			const tI = t.intersection(t.struct({ a: t.string }), t.struct({ b: t.number }))
+			expect(tI.validators).toBeUndefined()
+			expect(tI.asyncValidators).toBeUndefined()
 		})
 	})
 })

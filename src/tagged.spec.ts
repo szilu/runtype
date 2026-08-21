@@ -40,6 +40,19 @@ describe('test tagged union type', () => {
 		expect(t.decode(tTaggedUnion, { type: 'bool' })).toBeErr()
 	})
 
+	it('should report a falsy tag as unknown, not missing', () => {
+		expect(t.decode(tTaggedUnion, { type: '' })).toBeErr('unknown tag')
+		expect(t.decode(tTaggedUnion, {})).toBeErr('missing tag')
+		expect(t.decode(tTaggedUnion, { type: undefined })).toBeErr('missing tag')
+	})
+
+	it('should reject a non-primitive tag instead of throwing', () => {
+		expect(t.decode(tTaggedUnion, { type: Object.create(null) })).toBeErr('invalid tag')
+		expect(t.decode(tTaggedUnion, { type: {} })).toBeErr('invalid tag')
+		expect(t.decode(tTaggedUnion, { type: [] })).toBeErr('invalid tag')
+		expect(t.decode(tTaggedUnion, { type: Symbol('num') })).toBeErr('invalid tag')
+	})
+
 	it('should reject non-conforming member', () => {
 		expect(t.decode(tTaggedUnion, { type: 'num', s: 'string' })).toBeErr()
 	})
@@ -68,11 +81,23 @@ describe('test tagged union type', () => {
 	})
 
 	it('should reject unknown tag in validate()', async () => {
-		expect(await tTaggedUnion.validate({ type: 'bool' } as any, {})).toBeErr()
+		expect(
+			await tTaggedUnion.validate({ type: 'bool' } as unknown as TaggedUnion, {})
+		).toBeErr()
 	})
 
 	it('should reject unknown tag in validateSync()', () => {
-		expect(tTaggedUnion.validateSync({ type: 'bool' } as any, {})).toBeErr()
+		expect(tTaggedUnion.validateSync({ type: 'bool' } as unknown as TaggedUnion, {})).toBeErr()
+	})
+
+	it('should reject null/undefined in validate()', async () => {
+		expect(await tTaggedUnion.validate(null as unknown as TaggedUnion, {})).toBeErr()
+		expect(await tTaggedUnion.validate(undefined as unknown as TaggedUnion, {})).toBeErr()
+	})
+
+	it('should reject null/undefined in validateSync()', () => {
+		expect(tTaggedUnion.validateSync(null as unknown as TaggedUnion, {})).toBeErr()
+		expect(tTaggedUnion.validateSync(undefined as unknown as TaggedUnion, {})).toBeErr()
 	})
 })
 

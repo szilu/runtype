@@ -39,8 +39,8 @@ describe('test lazy type', () => {
 	})
 
 	it('should print recursive types without infinite recursion', () => {
-		let tNode: t.Type<any>
-		tNode = t.lazy(() => t.struct({ v: t.number, children: t.array(tNode) }))
+		let tNode: t.Type<unknown>
+		tNode = t.lazy(() => t.struct({ v: t.number, children: t.array(tNode) }) as t.Type<unknown>)
 		const printed = tNode.print()
 		expect(printed).toBe('{ v: number, children: ...[] }')
 		// print() must be idempotent and side-effect free
