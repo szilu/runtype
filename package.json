@@ -23,8 +23,8 @@
 		"watch": "tsc --watch -p tsconfig.json",
 		"test": "jest",
 		"test-cover": "jest --coverage",
-		"prepublishOnly": "npm run clean && npm run build",
-		"pub": "npm publish --access public"
+		"prepublishOnly": "pnpm run clean && pnpm run build",
+		"pub": "pnpm publish --access public"
 	},
 	"repository": {
 		"type": "git",
