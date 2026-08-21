@@ -22,7 +22,7 @@ export function isOk<T, E>(r: Result<T, E>): r is Ok<T> {
 	return 'ok' in r
 }
 
-export function isErr<E>(r: Result<any, E>): r is Err<E> {
+export function isErr<E>(r: Result<unknown, E>): r is Err<E> {
 	return 'err' in r
 }
 

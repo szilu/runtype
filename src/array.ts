@@ -1,5 +1,5 @@
-import { type Result, ok, err, isOk, isErr } from './utils.js'
-import { Type, type DecoderOpts, type RTError, error } from './type.js'
+import { type DecoderOpts, error, type RTError, Type } from './type.js'
+import { err, isErr, isOk, ok, type Result } from './utils.js'
 
 // Array //
 ///////////
@@ -62,6 +62,7 @@ class ArrayType<T> extends Type<T[]> {
 	}
 
 	validateSync(v: T[], opts: DecoderOpts): Result<T[], RTError> {
+		this.checkSync()
 		const errors: RTError = []
 
 		for (let i = 0; i < v.length; i++) {

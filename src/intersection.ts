@@ -1,6 +1,6 @@
-import { type Result, err, isOk } from './utils.js'
-import { Type, type DecoderOpts, type RTError } from './type.js'
 import { StructType } from './struct.js'
+import { copyValidators, type DecoderOpts, type RTError, Type } from './type.js'
+import { err, isOk, type Result } from './utils.js'
 
 // Intersection //
 //////////////////
@@ -45,6 +45,7 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 	}
 
 	validateSync(v: T1 & T2, opts: DecoderOpts): Result<T1 & T2, RTError> {
+		this.checkSync()
 		const errors: RTError = []
 
 		const res1 = this.type1.validateSync(v, opts)
@@ -56,6 +57,12 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 		if (errors.length) return err(errors)
 		return this.validateBaseSync(v, opts)
 	}
+
+	deepMap(fn: (t: Type<unknown>) => Type<unknown>): Type<unknown> {
+		const t1 = fn(this.type1 as unknown as Type<unknown>)
+		const t2 = fn(this.type2 as unknown as Type<unknown>)
+		return copyValidators(this, intersection(t1, t2)) as unknown as Type<unknown>
+	}
 }
 
 class IntersectionStructType<
@@ -66,55 +73,37 @@ class IntersectionStructType<
 	struct2: StructType<T2>
 
 	constructor(struct1: StructType<T1>, struct2: StructType<T2>) {
-		const props: { [K in keyof (T1 & T2)]?: Type<(T1 & T2)[K]> } = {}
+		const props: Record<string, Type<unknown>> = {}
+		const p1 = struct1.props as Record<string, Type<unknown>>
+		const p2 = struct2.props as Record<string, Type<unknown>>
 
-		for (const k in struct1.props) {
-			if (struct2.props[k as any])
-				props[k] =
-					struct1.props[k] !== (struct2.props[k as any] as any)
-						? (intersection(struct1.props[k], struct2.props[k as any] as any) as any)
-						: struct1.props[k]
-			else props[k] = struct1.props[k] as any
+		for (const k of Object.keys(p1)) {
+			const t1 = p1[k]
+			const t2 = Object.hasOwn(p2, k) ? p2[k] : undefined
+			props[k] = t2 && t2 !== t1 ? intersection(t1, t2) : t1
 		}
-		for (const k in struct2.props) {
-			if (!struct1.props[k as any]) props[k] = struct2.props[k] as any
+		for (const k of Object.keys(p2)) {
+			if (!Object.hasOwn(p1, k)) props[k] = p2[k]
 		}
 		super(props as { [K in keyof (T1 & T2)]: Type<(T1 & T2)[K]> })
 		this.struct1 = struct1
 		this.struct2 = struct2
+		// struct1/struct2's own validators become this type's own, so copyValidators(),
+		// deepPartial() and deepPatch() carry them and validateBase()/validateBaseSync() run
+		// them. Left undefined when empty: `validators` is public and `[]` reads as truthy.
+		const validators = [...(struct1.validators ?? []), ...(struct2.validators ?? [])]
+		// biome-ignore lint/suspicious/noExplicitAny: StructType's mapped value type is not nameable here
+		if (validators.length) this.validators = validators as any
+		const asyncValidators = [
+			...(struct1.asyncValidators ?? []),
+			...(struct2.asyncValidators ?? [])
+		]
+		// biome-ignore lint/suspicious/noExplicitAny: StructType's mapped value type is not nameable here
+		if (asyncValidators.length) this.asyncValidators = asyncValidators as any
 	}
 
 	print() {
 		return this.struct1.print() + ' & ' + this.struct2.print()
-	}
-
-	// The merged StructType.validate only runs the merged props + this struct's own
-	// validators; validators attached to struct1/struct2 before intersecting would
-	// be silently dropped. Run their validateBase() first.
-	async validate(v: T1 & T2, opts: DecoderOpts) {
-		const errors: RTError = []
-
-		const res1 = await this.struct1.validateBase(v, opts)
-		if (!isOk(res1)) errors.push(...res1.err)
-
-		const res2 = await this.struct2.validateBase(v, opts)
-		if (!isOk(res2)) errors.push(...res2.err)
-
-		if (errors.length) return err(errors)
-		return super.validate(v, opts)
-	}
-
-	validateSync(v: T1 & T2, opts: DecoderOpts) {
-		const errors: RTError = []
-
-		const res1 = this.struct1.validateBaseSync(v, opts)
-		if (!isOk(res1)) errors.push(...res1.err)
-
-		const res2 = this.struct2.validateBaseSync(v, opts)
-		if (!isOk(res2)) errors.push(...res2.err)
-
-		if (errors.length) return err(errors)
-		return super.validateSync(v, opts)
 	}
 }
 
@@ -125,7 +114,7 @@ export function intersection<
 >(type1: StructType<T1>, type2: StructType<T2>): StructType<T1 & T2>
 export function intersection<T1, T2>(type1: Type<T1>, type2: Type<T2>): Type<T1 & T2> {
 	if (type1 instanceof StructType && type2 instanceof StructType) {
-		return new IntersectionStructType(type1, type2) as any as Type<T1 & T2>
+		return new IntersectionStructType(type1, type2) as unknown as Type<T1 & T2>
 	} else {
 		return new IntersectionType(type1, type2)
 	}

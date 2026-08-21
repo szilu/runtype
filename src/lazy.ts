@@ -1,9 +1,9 @@
-import { type Result, isErr } from './utils.js'
-import { Type, type DecoderOpts, type RTError } from './type.js'
+import { copyValidators, type DecoderOpts, type RTError, Type } from './type.js'
+import { isErr, type Result } from './utils.js'
 
 // Lazy //
 //////////
-class LazyType<T> extends Type<T> {
+export class LazyType<T> extends Type<T> {
 	def: () => Type<T>
 	type?: Type<T>
 	private _printing = false
@@ -37,9 +37,19 @@ class LazyType<T> extends Type<T> {
 	}
 
 	validateSync(v: T, opts: DecoderOpts): Result<T, RTError> {
+		this.checkSync()
 		if (!this.type) this.type = this.def()
 		const res = this.type.validateSync(v, opts)
 		return isErr(res) ? res : this.validateBaseSync(v, opts)
+	}
+
+	// Map on resolution, not now: the whole point of lazy() is that def() may reference a
+	// type that does not exist yet (recursive types).
+	deepMap(fn: (t: Type<unknown>) => Type<unknown>): Type<unknown> {
+		return copyValidators(
+			this,
+			lazy(() => fn(this.def() as Type<unknown>))
+		)
 	}
 }
 

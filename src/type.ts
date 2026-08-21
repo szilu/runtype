@@ -1,4 +1,4 @@
-import { type Result, ok, err, type Err, isErr, isOk } from './utils.js'
+import { type Err, err, isErr, isOk, ok, type Result } from './utils.js'
 
 //////////
 // Type //
@@ -32,12 +32,20 @@ export type AsyncValidator<T> = (value: T) => Result<T, RTError> | Promise<Resul
 // NOTE: Object.create() skips the constructor, so any future ES #private field
 // on a Type subclass would not be copied. TS-private fields (StructType._keys,
 // _keySet) are ordinary own enumerable props and copy fine.
+// biome-ignore lint/suspicious/noExplicitAny: Type<any> is the only bound every Type instance satisfies
 function cloneType<T extends Type<any>>(type: T): T {
 	const copy: T = Object.create(Object.getPrototypeOf(type))
 	for (const prop in type) {
-		;(copy as any)[prop] = (type as any)[prop]
+		;(copy as Record<string, unknown>)[prop] = (type as Record<string, unknown>)[prop]
 	}
 	return copy
+}
+
+// A validator is user code. It may be written against a shape a derived type no longer has
+// (deepPartial() makes fields absent) and throw. decode()/validate()/validateSync() all
+// promise a Result, so a throw is reported as an error rather than escaping.
+function validatorThrew(e: unknown): Err<RTError> {
+	return error(`validator threw: ${e instanceof Error ? e.message : String(e)}`)
 }
 
 export abstract class Type<T> {
@@ -64,29 +72,45 @@ export abstract class Type<T> {
 	}
 
 	async validateBase(v: T, _opts: DecoderOpts): Promise<Result<T, RTError>> {
-		for (const valid of this.validators || []) {
-			const res = valid(v)
-			if (isErr(res)) return res
-		}
-		for (const valid of this.asyncValidators || []) {
-			const res = await valid(v)
-			if (isErr(res)) return res
+		try {
+			for (const valid of this.validators || []) {
+				const res = valid(v)
+				if (isErr(res)) return res
+			}
+			for (const valid of this.asyncValidators || []) {
+				const res = await valid(v)
+				if (isErr(res)) return res
+			}
+		} catch (e) {
+			// A misuse of validateSync() is a programming error wherever it surfaces from -
+			// do not launder it into a validation failure.
+			if (e instanceof AsyncValidatorError) throw e
+			return validatorThrew(e)
 		}
 		return ok(v)
+	}
+
+	// Fails fast: calling validateSync() on a type with async validators is a programming
+	// error, and a field error must not mask it.
+	protected checkSync(): void {
+		if (this.asyncValidators?.length) throw new AsyncValidatorError(this)
 	}
 
 	validateBaseSync(v: T, _opts: DecoderOpts): Result<T, RTError> {
-		if (this.asyncValidators?.length) {
-			throw new AsyncValidatorError(this)
-		}
-		for (const valid of this.validators || []) {
-			const res = valid(v)
-			if (isErr(res)) return res
+		this.checkSync()
+		try {
+			for (const valid of this.validators || []) {
+				const res = valid(v)
+				if (isErr(res)) return res
+			}
+		} catch (e) {
+			if (e instanceof AsyncValidatorError) throw e
+			return validatorThrew(e)
 		}
 		return ok(v)
 	}
 
-	default(value: T | (() => T)): Type<T> {
+	default(value: DefaultValue<T>): Type<T> {
 		return new DefaultType(this, value)
 	}
 
@@ -97,11 +121,33 @@ export abstract class Type<T> {
 	nullable(): NullableType<T> {
 		return new NullableType(this)
 	}
+
+	// Rebuild this type with every child replaced by fn(child) - the recursion hook for
+	// deepPartial()/deepPatch(). Each combinator owns its own case, so no instanceof chain
+	// over every subclass. Default: leaves and as-is types (scalars, array, tuple) return themselves.
+	deepMap(_fn: (t: Type<unknown>) => Type<unknown>): Type<unknown> {
+		// Type is invariant in T (validators), so the widening needs a cast
+		return this as unknown as Type<unknown>
+	}
+}
+
+// Append src's own validators to dst's. Copy-on-write via addValidator(), so dst may be a
+// shared instance: the caller gets a clone and the original is left untouched.
+// biome-ignore lint/suspicious/noExplicitAny: Type<any> is the only bound every Type instance satisfies
+export function copyValidators<S, D extends Type<any>>(src: Type<S>, dst: D): D {
+	let out = dst
+	// biome-ignore lint/suspicious/noExplicitAny: the validator is deliberately run against the derived shape
+	for (const v of src.validators ?? []) out = out.addValidator(v as Validator<any>)
+	// biome-ignore lint/suspicious/noExplicitAny: the validator is deliberately run against the derived shape
+	for (const v of src.asyncValidators ?? []) out = out.addAsyncValidator(v as AsyncValidator<any>)
+	return out
 }
 
 export class AsyncValidatorError extends Error {
+	// biome-ignore lint/suspicious/noExplicitAny: Type<any> is the only bound every Type instance satisfies
 	readonly type: Type<any>
 
+	// biome-ignore lint/suspicious/noExplicitAny: Type is invariant in T; unknown would force a cast at every throw site
 	constructor(type: Type<any>) {
 		super(
 			`validateSync() cannot be used on type '${type.print()}': it has async validators, use validate() instead`
@@ -151,16 +197,31 @@ export function error(error: string, path: string[] = []): Err<RTError> {
 	return err([{ path, error }])
 }
 
+// An object default is returned by reference, so every decode would share one instance;
+// only a factory is safe, and for an object T it is the only form accepted. Distributive
+// on purpose: a `string | {a:1}` default still rejects the object half, while `unknown`/
+// `any` fall through to the runtime check in DefaultType's constructor.
+export type DefaultValue<T> = T extends object ? () => T : T | (() => T)
+
 // Default //
 /////////////
 export class DefaultType<T> extends Type<T> {
 	type: Type<T>
 	defaultValue: T | (() => T)
 
-	constructor(type: Type<T>, defaultValue: T | (() => T)) {
+	constructor(type: Type<T>, defaultValue: DefaultValue<T>) {
 		super()
+		// A stored object is returned by reference, so every decode shares one instance.
+		// Object.freeze() is shallow and does not stop Date's setTime(); a factory is the only safe form.
+		if (typeof defaultValue === 'object' && defaultValue !== null) {
+			throw new TypeError(
+				'default()/withDefault() needs a factory for object, array and Date defaults: ' +
+					'a stored value is returned by reference, so every decode shares one instance. ' +
+					'Use .default(() => ({ ... })) or withDefault(type, () => ({ ... })).'
+			)
+		}
 		this.type = type
-		this.defaultValue = defaultValue
+		this.defaultValue = defaultValue as T | (() => T)
 	}
 
 	private getDefault(): T {
@@ -178,8 +239,9 @@ export class DefaultType<T> extends Type<T> {
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<T, RTError> {
-		if (u === undefined) return ok(this.getDefault())
-		return this.type.decode(u, opts)
+		// The default goes through the inner type like any other value: a factory that
+		// returns a wrong-shaped object is a programming error, not silently valid data.
+		return this.type.decode(u === undefined ? this.getDefault() : u, opts)
 	}
 
 	async validate(v: T, opts: DecoderOpts) {
@@ -188,9 +250,17 @@ export class DefaultType<T> extends Type<T> {
 	}
 
 	validateSync(v: T, opts: DecoderOpts): Result<T, RTError> {
+		this.checkSync()
 		const res = this.type.validateSync(v, opts)
 		return isErr(res) ? res : this.validateBaseSync(v, opts)
 	}
+}
+
+// A bare default prints as `number = 7`, so `number = 7 | null` would read as the
+// default being `7 | null`. Parenthesize it inside optional()/nullable().
+// biome-ignore lint/suspicious/noExplicitAny: Type is invariant in T; unknown would force a cast at both call sites
+function printInner(type: Type<any>): string {
+	return type instanceof DefaultType ? `(${type.print()})` : type.print()
 }
 
 // Optional //
@@ -204,11 +274,15 @@ export class OptionalType<T> extends Type<T | undefined> {
 	}
 
 	print() {
-		return this.type.print() + ' | undefined'
+		return printInner(this.type) + ' | undefined'
 	}
 
 	decode(u: unknown, opts: DecoderOpts): Result<T | undefined, RTError> {
-		if (u === undefined) return ok(undefined)
+		// Only a default claims `undefined`. Delegating to any inner type would let decoder
+		// coercion options (coerceToArray) turn an absent field into a value.
+		if (u === undefined) {
+			return this.type instanceof DefaultType ? this.type.decode(u, opts) : ok(undefined)
+		}
 		const res = this.type.decode(u, opts)
 		return isOk(res) ? res : err(res.err)
 	}
@@ -220,6 +294,7 @@ export class OptionalType<T> extends Type<T | undefined> {
 	}
 
 	validateSync(v: T | undefined, opts: DecoderOpts): Result<T | undefined, RTError> {
+		this.checkSync()
 		if (v === undefined) return ok(undefined)
 		const res = this.type.validateSync(v, opts)
 		return isErr(res) ? res : this.validateBaseSync(v, opts)
@@ -238,14 +313,19 @@ export class NullableType<T> extends Type<T | null | undefined> {
 
 	print() {
 		return (
-			this.type.print() +
+			printInner(this.type) +
 			(isOk(this.type.decode(null, {})) ? '' : ' | null') +
-			(isOk(this.type.decode(undefined, {})) ? '' : ' | undefined')
+			(acceptsUndefined(this.type as Type<unknown>) ? '' : ' | undefined')
 		)
 	}
 
 	decode(u: unknown, opts: DecoderOpts) {
-		if (u === null || u === undefined) return ok(u)
+		// Same as OptionalType: a directly wrapped withDefault() still fires on undefined,
+		// nothing else gets to see the sentinel. `null` is this wrapper's own answer.
+		if (u === null) return ok(u)
+		if (u === undefined) {
+			return this.type instanceof DefaultType ? this.type.decode(u, opts) : ok(u)
+		}
 		const res = this.type.decode(u, opts)
 		return isOk(res) ? res : err(res.err)
 	}
@@ -260,15 +340,26 @@ export class NullableType<T> extends Type<T | null | undefined> {
 		v: T | null | undefined,
 		opts: DecoderOpts
 	): Result<T | null | undefined, RTError> {
+		this.checkSync()
 		if (v === null || v === undefined) return ok(v)
 		const res = this.type.validateSync(v, opts)
 		return isErr(res) ? res : this.validateBaseSync(v, opts)
 	}
 }
 
+// True when the type handles `undefined` on its own. Structural for the wrappers, so print()
+// and the struct combinators never fire a factory default as a side effect. Leaves still get
+// probed - they have no factories. (A default buried inside record()/union()/lazy() is still
+// reached by the probe; that is a rare enough shape to leave alone.)
+export function acceptsUndefined(type: Type<unknown>): boolean {
+	if (type instanceof DefaultType || type instanceof OptionalType || type instanceof NullableType)
+		return true
+	return isOk(type.decode(undefined, {}))
+}
+
 // Composable functions //
 //////////////////////////
-export function withDefault<T>(type: Type<T>, defaultValue: T | (() => T)): DefaultType<T> {
+export function withDefault<T>(type: Type<T>, defaultValue: DefaultValue<T>): DefaultType<T> {
 	return new DefaultType(type, defaultValue)
 }
 

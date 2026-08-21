@@ -1,9 +1,9 @@
-import { type Result, ok, isOk } from './utils.js'
-import { Type, type DecoderOpts, type RTError, error } from './type.js'
+import { type DecoderOpts, error, type RTError, Type } from './type.js'
+import { isOk, ok, type Result } from './utils.js'
 
 // Constants //
 ///////////////
-class ConstantType<T> extends Type<T> {
+export class ConstantType<T> extends Type<T> {
 	value: T
 
 	constructor(value: T) {
@@ -275,19 +275,23 @@ export const date = new DateType()
 
 // Any //
 /////////
+// biome-ignore lint/suspicious/noExplicitAny: the `any` scalar must be Type<any>
 class AnyType extends Type<any> {
 	print() {
 		return 'any'
 	}
 
-	decode(u: unknown, _opts: DecoderOpts) {
-		return ok(u as any)
+	// biome-ignore lint/suspicious/noExplicitAny: yields `any` by definition
+	decode(u: unknown, _opts: DecoderOpts): Result<any, RTError> {
+		return ok(u)
 	}
 
-	async validate(v: any, opts: DecoderOpts) {
+	// biome-ignore lint/suspicious/noExplicitAny: accepts any value by definition
+	async validate(v: any, opts: DecoderOpts): Promise<Result<any, RTError>> {
 		return this.validateBase(v, opts)
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: accepts any value by definition
 	validateSync(v: any, opts: DecoderOpts): Result<any, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
@@ -338,20 +342,20 @@ export const defined = new DefinedType()
 
 // UnknownObject //
 ///////////////////
-class UnknownObjectType extends Type<{}> {
+class UnknownObjectType extends Type<object> {
 	print() {
 		return 'object'
 	}
 
 	decode(u: unknown, _opts: DecoderOpts) {
-		return typeof u === 'object' && u !== null ? ok(u as {}) : error('expected object')
+		return typeof u === 'object' && u !== null ? ok(u as object) : error('expected object')
 	}
 
-	async validate(v: {}, opts: DecoderOpts) {
+	async validate(v: object, opts: DecoderOpts) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: {}, opts: DecoderOpts): Result<{}, RTError> {
+	validateSync(v: object, opts: DecoderOpts): Result<object, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -503,7 +507,7 @@ function isScalar(u: unknown): u is Scalar {
 	return typeof u === 'string' || typeof u === 'number' || typeof u === 'boolean'
 }
 
-class LiteralType<T extends ReadonlyArray<Scalar>> extends Type<T[number]> {
+export class LiteralType<T extends ReadonlyArray<Scalar>> extends Type<T[number]> {
 	values: T
 
 	constructor(values: T) {

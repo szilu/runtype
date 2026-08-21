@@ -1,5 +1,5 @@
-import { type Result, ok, err, isOk, isErr } from './utils.js'
-import { Type, type DecoderOpts, type RTError, error } from './type.js'
+import { type DecoderOpts, error, type RTError, Type } from './type.js'
+import { err, isErr, isOk, ok, type Result } from './utils.js'
 
 // Tuple //
 ///////////
@@ -61,6 +61,7 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 	}
 
 	validateSync(v: A, opts: DecoderOpts): Result<A, RTError> {
+		this.checkSync()
 		const errors: RTError = []
 		for (let i = 0; i < v.length; i++) {
 			const res = this.memberTypes[i].validateSync(v[i], opts)
