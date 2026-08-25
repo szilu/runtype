@@ -325,6 +325,7 @@ T.decode(T.number, '42', { coerceStringToNumber: true })
 |--------|-------------|
 | `coerceNumberToString` | Coerce numbers to string |
 | `coerceNumberToBoolean` | Coerce numbers to boolean |
+| `coerceStringToBoolean` | Coerce `'true'`/`'false'` (case insensitive) and numeric strings to boolean |
 | `coerceStringToNumber` | Coerce string to number |
 | `coerceScalar` | Enable all scalar coercions above |
 

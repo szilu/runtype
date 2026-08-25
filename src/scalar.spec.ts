@@ -374,6 +374,47 @@ describe('test basic types', () => {
 			expect(t.decode(t.boolean, undefined)).toBeErr()
 		})
 
+		it('should reject string', () => {
+			expect(t.decode(t.boolean, 'true')).toBeErr()
+		})
+
+		it("should coerce 'true' with opt", () => {
+			expect(t.decode(t.boolean, 'true', { coerceAll: true })).toEqual(t.ok(true))
+		})
+
+		it("should coerce 'false' with opt", () => {
+			expect(t.decode(t.boolean, 'false', { coerceAll: true })).toEqual(t.ok(false))
+		})
+
+		it('should coerce boolean strings case insensitively', () => {
+			expect(t.decode(t.boolean, 'True', { coerceAll: true })).toEqual(t.ok(true))
+			expect(t.decode(t.boolean, 'FALSE', { coerceAll: true })).toEqual(t.ok(false))
+		})
+
+		it("should coerce '0' and '1' with opt", () => {
+			expect(t.decode(t.boolean, '0', { coerceAll: true })).toEqual(t.ok(false))
+			expect(t.decode(t.boolean, '1', { coerceAll: true })).toEqual(t.ok(true))
+		})
+
+		it('should reject a non boolean string with opt', () => {
+			expect(t.decode(t.boolean, 'no', { coerceAll: true })).toBeErr()
+			expect(t.decode(t.boolean, 'yes', { coerceAll: true })).toBeErr()
+		})
+
+		it('should coerce string with coerceStringToBoolean', () => {
+			expect(t.decode(t.boolean, 'false', { coerceStringToBoolean: true })).toEqual(
+				t.ok(false)
+			)
+		})
+
+		it('should not coerce number with coerceStringToBoolean', () => {
+			expect(t.decode(t.boolean, 0, { coerceStringToBoolean: true })).toBeErr()
+		})
+
+		it('should coerce string with coerceScalar', () => {
+			expect(t.decode(t.boolean, 'false', { coerceScalar: true })).toEqual(t.ok(false))
+		})
+
 		it('should print type', () => {
 			expect(t.boolean.print()).toBe('boolean')
 		})

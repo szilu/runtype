@@ -206,13 +206,25 @@ class BooleanType extends Type<boolean> {
 			case 'number':
 				if (opts.coerceNumberToBoolean || opts.coerceScalar || opts.coerceAll)
 					return ok(!!u)
-			case 'string':
+				break
+			case 'string': {
 				if (
-					(opts.coerceStringToNumber && opts.coerceNumberToBoolean) ||
-					opts.coerceScalar ||
-					opts.coerceAll
+					!(
+						opts.coerceStringToBoolean ||
+						(opts.coerceStringToNumber && opts.coerceNumberToBoolean) ||
+						opts.coerceScalar ||
+						opts.coerceAll
+					)
 				)
-					return ok(Number.isFinite(+u) ? !!+u : !!u)
+					break
+				// XSD writes booleans as 'true'/'false' or '1'/'0'; the case-insensitive
+				// spelling is what XML and query strings hand over in practice.
+				const lower = u.toLowerCase()
+				if (lower === 'true') return ok(true)
+				if (lower === 'false') return ok(false)
+				if (Number.isFinite(+u)) return ok(!!+u)
+				break
+			}
 		}
 		return error('expected boolean')
 	}
