@@ -683,4 +683,48 @@ describe('test basic types', () => {
 	})
 })
 
+describe('test coercion rules', () => {
+	const rules = [
+		['numberToString', 'coerceNumberToString', 'coerceScalar'],
+		['stringToNumber', 'coerceStringToNumber', 'coerceScalar'],
+		['numberToBoolean', 'coerceNumberToBoolean', 'coerceScalar'],
+		['stringToBoolean', 'coerceStringToBoolean', 'coerceScalar'],
+		['stringToDate', 'coerceStringToDate', 'coerceDate'],
+		['numberToDate', 'coerceNumberToDate', 'coerceDate'],
+		['stringToBigInt', 'coerceStringToBigInt', 'coerceBigInt'],
+		['numberToBigInt', 'coerceNumberToBigInt', 'coerceBigInt']
+	] as const
+
+	it('should be off without options', () => {
+		for (const [rule] of rules) expect(t.coerces[rule]({})).toBe(false)
+	})
+
+	it('should follow its own flag', () => {
+		for (const [rule, own] of rules) expect(t.coerces[rule]({ [own]: true })).toBe(true)
+	})
+
+	it('should follow its group flag', () => {
+		for (const [rule, , group] of rules) expect(t.coerces[rule]({ [group]: true })).toBe(true)
+	})
+
+	it('should ignore a foreign group flag', () => {
+		for (const [rule, , group] of rules) {
+			for (const other of ['coerceScalar', 'coerceDate', 'coerceBigInt'] as const) {
+				if (other !== group) expect(t.coerces[rule]({ [other]: true })).toBe(false)
+			}
+		}
+	})
+
+	it('should follow coerceAll', () => {
+		for (const [rule] of rules) expect(t.coerces[rule]({ coerceAll: true })).toBe(true)
+	})
+
+	it('should keep the legacy string to boolean pair', () => {
+		expect(
+			t.coerces.stringToBoolean({ coerceStringToNumber: true, coerceNumberToBoolean: true })
+		).toBe(true)
+		expect(t.coerces.stringToBoolean({ coerceStringToNumber: true })).toBe(false)
+	})
+})
+
 // vim: ts=4
