@@ -37,7 +37,7 @@ export const falseValue = new ConstantType<false>(false)
 
 // String //
 ////////////
-class StringType extends Type<string> {
+export class StringType extends Type<string> {
 	print() {
 		return 'string'
 	}
@@ -114,7 +114,7 @@ export const string = new StringType()
 
 // Number //
 ////////////
-class NumberType extends Type<number> {
+export class NumberType extends Type<number> {
 	print() {
 		return 'number'
 	}
@@ -178,7 +178,7 @@ export const number = new NumberType()
 
 // Integer //
 /////////////
-class IntegerType extends NumberType {
+export class IntegerType extends NumberType {
 	print() {
 		return 'integer'
 	}
@@ -194,7 +194,7 @@ export const id = new IntegerType()
 
 // Boolean //
 /////////////
-class BooleanType extends Type<boolean> {
+export class BooleanType extends Type<boolean> {
 	print() {
 		return 'boolean'
 	}
@@ -237,7 +237,7 @@ export const boolean = new BooleanType()
 
 // Date //
 //////////
-class DateType extends Type<Date> {
+export class DateType extends Type<Date> {
 	print() {
 		return 'Date'
 	}
@@ -276,7 +276,7 @@ export const date = new DateType()
 // Any //
 /////////
 // biome-ignore lint/suspicious/noExplicitAny: the `any` scalar must be Type<any>
-class AnyType extends Type<any> {
+export class AnyType extends Type<any> {
 	print() {
 		return 'any'
 	}
@@ -300,7 +300,7 @@ export const any = new AnyType()
 
 // Unknown //
 /////////////
-class UnknownType extends Type<unknown> {
+export class UnknownType extends Type<unknown> {
 	print() {
 		return 'unknown'
 	}
@@ -321,7 +321,7 @@ export const unknown = new UnknownType()
 
 // Defined //
 /////////////
-class DefinedType extends Type<{}> {
+export class DefinedType extends Type<{}> {
 	print() {
 		return '{}'
 	}
@@ -342,7 +342,7 @@ export const defined = new DefinedType()
 
 // UnknownObject //
 ///////////////////
-class UnknownObjectType extends Type<object> {
+export class UnknownObjectType extends Type<object> {
 	print() {
 		return 'object'
 	}
@@ -363,7 +363,7 @@ export const unknownObject = new UnknownObjectType()
 
 // BigInt //
 ////////////
-class BigIntType extends Type<bigint> {
+export class BigIntType extends Type<bigint> {
 	print() {
 		return 'bigint'
 	}
@@ -438,7 +438,7 @@ export const bigint = new BigIntType()
 
 // Symbol //
 ////////////
-class SymbolType extends Type<symbol> {
+export class SymbolType extends Type<symbol> {
 	print() {
 		return 'symbol'
 	}
@@ -459,7 +459,7 @@ export const symbol = new SymbolType()
 
 // Void //
 //////////
-class VoidType extends Type<void> {
+export class VoidType extends Type<void> {
 	print() {
 		return 'void'
 	}
@@ -480,7 +480,7 @@ export const voidType = new VoidType()
 
 // Never //
 ///////////
-class NeverType extends Type<never> {
+export class NeverType extends Type<never> {
 	print() {
 		return 'never'
 	}
