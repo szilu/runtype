@@ -4,7 +4,7 @@ import { ok, type Result } from './utils.js'
 
 // KeyOf //
 ///////////
-class KeyOfType<T extends { [K: string]: unknown }> extends Type<keyof T> {
+export class KeyOfType<T extends { [K: string]: unknown }> extends Type<keyof T> {
 	struct: StructType<T>
 
 	constructor(struct: StructType<T>) {

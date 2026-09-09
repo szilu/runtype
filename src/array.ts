@@ -3,7 +3,7 @@ import { err, isErr, isOk, ok, type Result } from './utils.js'
 
 // Array //
 ///////////
-class ArrayType<T> extends Type<T[]> {
+export class ArrayType<T> extends Type<T[]> {
 	memberType: Type<T>
 
 	constructor(memberType: Type<T>) {
