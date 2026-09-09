@@ -319,32 +319,14 @@ T.decode(T.number, '42', { coerceStringToNumber: true })
 // = { ok: 42 }
 ```
 
-Each coercion is one cell of a *source type* x *target type* matrix, and one option names
-that cell. The row is the runtype handed to `decode()` - every type decodes itself, so the
-type you pass is what picks the row - and the column is the `typeof` of the incoming value:
-
-| target \ source | `string` | `number` |
-|--------|--------|--------|
-| `T.string` | - | `coerceNumberToString` |
-| `T.number` | `coerceStringToNumber` | - |
-| `T.boolean` | `coerceStringToBoolean` | `coerceNumberToBoolean` |
-| `T.date` | `coerceStringToDate` | `coerceNumberToDate` |
-| `T.bigint` | `coerceStringToBigInt` | `coerceNumberToBigInt` |
-
-The group options below switch on a block of rows: `coerceScalar` the first three,
-`coerceDate` the `T.date` row and `coerceBigInt` the `T.bigint` row. `coerceAll` switches
-on every group. Structs, arrays and the other composite types pass the options down
-unchanged, so each leaf reads its own cell.
-
 ### Scalar Coercion
 
 | Option | Description |
 |--------|-------------|
 | `coerceNumberToString` | Coerce numbers to string |
 | `coerceNumberToBoolean` | Coerce numbers to boolean |
-| `coerceStringToBoolean` | Coerce `'true'`/`'false'` (case insensitive) and numeric strings to boolean |
 | `coerceStringToNumber` | Coerce string to number |
-| `coerceScalar` | Enable all string/number/boolean coercions above (not date or bigint) |
+| `coerceScalar` | Enable all scalar coercions above |
 
 ### Date Coercion
 

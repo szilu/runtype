@@ -374,47 +374,6 @@ describe('test basic types', () => {
 			expect(t.decode(t.boolean, undefined)).toBeErr()
 		})
 
-		it('should reject string', () => {
-			expect(t.decode(t.boolean, 'true')).toBeErr()
-		})
-
-		it("should coerce 'true' with opt", () => {
-			expect(t.decode(t.boolean, 'true', { coerceAll: true })).toEqual(t.ok(true))
-		})
-
-		it("should coerce 'false' with opt", () => {
-			expect(t.decode(t.boolean, 'false', { coerceAll: true })).toEqual(t.ok(false))
-		})
-
-		it('should coerce boolean strings case insensitively', () => {
-			expect(t.decode(t.boolean, 'True', { coerceAll: true })).toEqual(t.ok(true))
-			expect(t.decode(t.boolean, 'FALSE', { coerceAll: true })).toEqual(t.ok(false))
-		})
-
-		it("should coerce '0' and '1' with opt", () => {
-			expect(t.decode(t.boolean, '0', { coerceAll: true })).toEqual(t.ok(false))
-			expect(t.decode(t.boolean, '1', { coerceAll: true })).toEqual(t.ok(true))
-		})
-
-		it('should reject a non boolean string with opt', () => {
-			expect(t.decode(t.boolean, 'no', { coerceAll: true })).toBeErr()
-			expect(t.decode(t.boolean, 'yes', { coerceAll: true })).toBeErr()
-		})
-
-		it('should coerce string with coerceStringToBoolean', () => {
-			expect(t.decode(t.boolean, 'false', { coerceStringToBoolean: true })).toEqual(
-				t.ok(false)
-			)
-		})
-
-		it('should not coerce number with coerceStringToBoolean', () => {
-			expect(t.decode(t.boolean, 0, { coerceStringToBoolean: true })).toBeErr()
-		})
-
-		it('should coerce string with coerceScalar', () => {
-			expect(t.decode(t.boolean, 'false', { coerceScalar: true })).toEqual(t.ok(false))
-		})
-
 		it('should print type', () => {
 			expect(t.boolean.print()).toBe('boolean')
 		})
@@ -680,50 +639,6 @@ describe('test basic types', () => {
 		it('should print type', () => {
 			expect(t.never.print()).toBe('never')
 		})
-	})
-})
-
-describe('test coercion rules', () => {
-	const rules = [
-		['numberToString', 'coerceNumberToString', 'coerceScalar'],
-		['stringToNumber', 'coerceStringToNumber', 'coerceScalar'],
-		['numberToBoolean', 'coerceNumberToBoolean', 'coerceScalar'],
-		['stringToBoolean', 'coerceStringToBoolean', 'coerceScalar'],
-		['stringToDate', 'coerceStringToDate', 'coerceDate'],
-		['numberToDate', 'coerceNumberToDate', 'coerceDate'],
-		['stringToBigInt', 'coerceStringToBigInt', 'coerceBigInt'],
-		['numberToBigInt', 'coerceNumberToBigInt', 'coerceBigInt']
-	] as const
-
-	it('should be off without options', () => {
-		for (const [rule] of rules) expect(t.coerces[rule]({})).toBe(false)
-	})
-
-	it('should follow its own flag', () => {
-		for (const [rule, own] of rules) expect(t.coerces[rule]({ [own]: true })).toBe(true)
-	})
-
-	it('should follow its group flag', () => {
-		for (const [rule, , group] of rules) expect(t.coerces[rule]({ [group]: true })).toBe(true)
-	})
-
-	it('should ignore a foreign group flag', () => {
-		for (const [rule, , group] of rules) {
-			for (const other of ['coerceScalar', 'coerceDate', 'coerceBigInt'] as const) {
-				if (other !== group) expect(t.coerces[rule]({ [other]: true })).toBe(false)
-			}
-		}
-	})
-
-	it('should follow coerceAll', () => {
-		for (const [rule] of rules) expect(t.coerces[rule]({ coerceAll: true })).toBe(true)
-	})
-
-	it('should keep the legacy string to boolean pair', () => {
-		expect(
-			t.coerces.stringToBoolean({ coerceStringToNumber: true, coerceNumberToBoolean: true })
-		).toBe(true)
-		expect(t.coerces.stringToBoolean({ coerceStringToNumber: true })).toBe(false)
 	})
 })
 

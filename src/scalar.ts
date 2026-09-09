@@ -1,30 +1,6 @@
 import { type DecoderOpts, error, type RTError, Type } from './type.js'
 import { isOk, ok, type Result } from './utils.js'
 
-// Coercion rules //
-////////////////////
-// Every scalar coercion is one cell of a (source typeof -> target type) matrix, and one
-// DecoderOpts flag names that cell. A group flag switches a whole block of rows on, and
-// coerceAll switches on every group.
-const scalarGroup = (o: DecoderOpts) => !!(o.coerceScalar || o.coerceAll)
-const dateGroup = (o: DecoderOpts) => !!(o.coerceDate || o.coerceAll)
-const bigIntGroup = (o: DecoderOpts) => !!(o.coerceBigInt || o.coerceAll)
-
-export const coerces = {
-	numberToString: (o: DecoderOpts) => !!o.coerceNumberToString || scalarGroup(o),
-	stringToNumber: (o: DecoderOpts) => !!o.coerceStringToNumber || scalarGroup(o),
-	numberToBoolean: (o: DecoderOpts) => !!o.coerceNumberToBoolean || scalarGroup(o),
-	stringToBoolean: (o: DecoderOpts) =>
-		!!o.coerceStringToBoolean ||
-		scalarGroup(o) ||
-		// string -> boolean predates its own flag, when it was gated on this pair
-		!!(o.coerceStringToNumber && o.coerceNumberToBoolean),
-	stringToDate: (o: DecoderOpts) => !!o.coerceStringToDate || dateGroup(o),
-	numberToDate: (o: DecoderOpts) => !!o.coerceNumberToDate || dateGroup(o),
-	stringToBigInt: (o: DecoderOpts) => !!o.coerceStringToBigInt || bigIntGroup(o),
-	numberToBigInt: (o: DecoderOpts) => !!o.coerceNumberToBigInt || bigIntGroup(o)
-}
-
 // Constants //
 ///////////////
 export class ConstantType<T> extends Type<T> {
@@ -71,7 +47,8 @@ export class StringType extends Type<string> {
 			case 'string':
 				return ok(u)
 			case 'number':
-				if (coerces.numberToString(opts)) return ok('' + u)
+				if (opts.coerceNumberToString || opts.coerceScalar || opts.coerceAll)
+					return ok('' + u)
 		}
 		return error('expected string')
 	}
@@ -149,7 +126,7 @@ export class NumberType extends Type<number> {
 					return ok(u)
 				} else break
 			case 'string':
-				if (coerces.stringToNumber(opts)) {
+				if (opts.coerceStringToNumber || opts.coerceScalar || opts.coerceAll) {
 					if (opts.acceptNaN || !Number.isNaN(+u)) return ok(+u)
 				}
 		}
@@ -227,18 +204,15 @@ export class BooleanType extends Type<boolean> {
 			case 'boolean':
 				return ok(u)
 			case 'number':
-				if (coerces.numberToBoolean(opts)) return ok(!!u)
-				break
-			case 'string': {
-				if (!coerces.stringToBoolean(opts)) break
-				// XSD writes booleans as 'true'/'false' or '1'/'0'; the case-insensitive
-				// spelling is what XML and query strings hand over in practice.
-				const lower = u.toLowerCase()
-				if (lower === 'true') return ok(true)
-				if (lower === 'false') return ok(false)
-				if (Number.isFinite(+u)) return ok(!!+u)
-				break
-			}
+				if (opts.coerceNumberToBoolean || opts.coerceScalar || opts.coerceAll)
+					return ok(!!u)
+			case 'string':
+				if (
+					(opts.coerceStringToNumber && opts.coerceNumberToBoolean) ||
+					opts.coerceScalar ||
+					opts.coerceAll
+				)
+					return ok(Number.isFinite(+u) ? !!+u : !!u)
 		}
 		return error('expected boolean')
 	}
@@ -276,10 +250,10 @@ export class DateType extends Type<Date> {
 				if (u instanceof Date && !Number.isNaN(u.valueOf())) return ok(u)
 				break
 			case 'string':
-				if (coerces.stringToDate(opts)) date = new Date(u)
+				if (opts.coerceStringToDate || opts.coerceDate || opts.coerceAll) date = new Date(u)
 				break
 			case 'number':
-				if (coerces.numberToDate(opts)) date = new Date(u)
+				if (opts.coerceNumberToDate || opts.coerceDate || opts.coerceAll) date = new Date(u)
 				break
 		}
 		if (date !== undefined && !Number.isNaN(date.valueOf())) {
@@ -399,7 +373,7 @@ export class BigIntType extends Type<bigint> {
 			case 'bigint':
 				return ok(u)
 			case 'string':
-				if (coerces.stringToBigInt(opts)) {
+				if (opts.coerceStringToBigInt || opts.coerceBigInt || opts.coerceAll) {
 					try {
 						return ok(BigInt(u))
 					} catch {
@@ -408,7 +382,7 @@ export class BigIntType extends Type<bigint> {
 				}
 				break
 			case 'number':
-				if (coerces.numberToBigInt(opts)) {
+				if (opts.coerceNumberToBigInt || opts.coerceBigInt || opts.coerceAll) {
 					if (Number.isInteger(u)) {
 						try {
 							return ok(BigInt(u))

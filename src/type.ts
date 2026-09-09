@@ -6,7 +6,6 @@ import { type Err, err, isErr, isOk, ok, type Result } from './utils.js'
 export interface DecoderOpts {
 	coerceNumberToString?: boolean
 	coerceNumberToBoolean?: boolean
-	coerceStringToBoolean?: boolean
 	coerceStringToNumber?: boolean
 	coerceScalar?: boolean
 
