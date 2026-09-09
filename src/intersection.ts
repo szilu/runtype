@@ -1,5 +1,5 @@
 import { StructType } from './struct.js'
-import { copyValidators, type DecoderOpts, type RTError, Type } from './type.js'
+import { copyValidators, type DecodeContext, type RTError, Type } from './type.js'
 import { err, isOk, type Result } from './utils.js'
 
 // Intersection //
@@ -18,7 +18,7 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 		return this.type1.print() + ' & ' + this.type2.print()
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<T1 & T2, RTError> {
+	decode(u: unknown, opts: DecodeContext): Result<T1 & T2, RTError> {
 		const errors: RTError = []
 
 		const res1 = this.type1.decode(u, opts)
@@ -31,7 +31,7 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 		return res1 as Result<T1 & T2, RTError>
 	}
 
-	async validate(v: T1 & T2, opts: DecoderOpts) {
+	async validate(v: T1 & T2, opts: DecodeContext) {
 		const errors: RTError = []
 
 		const res1 = await this.type1.validate(v, opts)
@@ -44,7 +44,7 @@ class IntersectionType<T1, T2> extends Type<T1 & T2> {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: T1 & T2, opts: DecoderOpts): Result<T1 & T2, RTError> {
+	validateSync(v: T1 & T2, opts: DecodeContext): Result<T1 & T2, RTError> {
 		this.checkSync()
 		const errors: RTError = []
 

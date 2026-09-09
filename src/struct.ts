@@ -2,7 +2,7 @@ import { LazyType } from './lazy.js'
 import {
 	acceptsUndefined,
 	copyValidators,
-	type DecoderOpts,
+	type DecodeContext,
 	DefaultType,
 	error,
 	NullableType,
@@ -46,7 +46,7 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 
 	decode(
 		u: unknown,
-		opts: DecoderOpts
+		opts: DecodeContext
 	): Result<{ [K in RequiredKeys<T>]: T[K] } & { [K in OptionalKeys<T>]?: T[K] }, RTError> {
 		if (typeof u !== 'object' || u === null || Array.isArray(u)) {
 			return error('expected object')
@@ -101,7 +101,7 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 		return ok(ret as { [K in keyof T]: T[K] })
 	}
 
-	async validate(v: T, opts: DecoderOpts) {
+	async validate(v: T, opts: DecodeContext) {
 		const struct = v as Record<string, unknown>
 		const errors: RTError = []
 
@@ -124,7 +124,7 @@ export class StructType<T extends { [K: string]: unknown }> extends Type<
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: T, opts: DecoderOpts) {
+	validateSync(v: T, opts: DecodeContext) {
 		this.checkSync()
 		const struct = v as Record<string, unknown>
 		const errors: RTError = []

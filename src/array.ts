@@ -1,4 +1,4 @@
-import { type DecoderOpts, error, type RTError, Type } from './type.js'
+import { type DecodeContext, error, type RTError, Type } from './type.js'
 import { err, isErr, isOk, ok, type Result } from './utils.js'
 
 // Array //
@@ -16,12 +16,17 @@ export class ArrayType<T> extends Type<T[]> {
 		return !/[|&()]/.test(member) ? member + '[]' : '(' + member + ')[]'
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<T[], RTError> {
+	decode(u: unknown, opts: DecodeContext): Result<T[], RTError> {
 		const ret: T[] = []
 		const errors: RTError = []
 
+		// coerceToArray is user code; decode() promises a Result, so a throw is an error here.
 		if (!Array.isArray(u) && opts.coerceToArray) {
-			u = opts.coerceToArray(u)
+			try {
+				u = opts.coerceToArray(u)
+			} catch {
+				return error('expected Array')
+			}
 		}
 
 		if (!Array.isArray(u)) return error('expected Array')
@@ -43,7 +48,7 @@ export class ArrayType<T> extends Type<T[]> {
 		return ok(ret)
 	}
 
-	async validate(v: T[], opts: DecoderOpts): Promise<Result<T[], RTError>> {
+	async validate(v: T[], opts: DecodeContext): Promise<Result<T[], RTError>> {
 		const errors: RTError = []
 
 		for (let i = 0; i < v.length; i++) {
@@ -61,7 +66,7 @@ export class ArrayType<T> extends Type<T[]> {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: T[], opts: DecoderOpts): Result<T[], RTError> {
+	validateSync(v: T[], opts: DecodeContext): Result<T[], RTError> {
 		this.checkSync()
 		const errors: RTError = []
 

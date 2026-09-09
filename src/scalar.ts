@@ -1,5 +1,5 @@
-import { type DecoderOpts, error, type RTError, Type } from './type.js'
-import { isOk, ok, type Result } from './utils.js'
+import { type DecodeContext, error, type RTError, runCoercer, Type } from './type.js'
+import { isErr, ok, type Result } from './utils.js'
 
 // Constants //
 ///////////////
@@ -16,16 +16,16 @@ export class ConstantType<T> extends Type<T> {
 		return JSON.stringify(this.value)
 	}
 
-	decode(u: unknown, _opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecodeContext) {
 		if (u !== this.value) return error('expected ' + JSON.stringify(this.value))
 		return ok(u as T)
 	}
 
-	async validate(v: T, opts: DecoderOpts) {
+	async validate(v: T, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: T, opts: DecoderOpts): Result<T, RTError> {
+	validateSync(v: T, opts: DecodeContext): Result<T, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -42,22 +42,16 @@ export class StringType extends Type<string> {
 		return 'string'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
-		switch (typeof u) {
-			case 'string':
-				return ok(u)
-			case 'number':
-				if (opts.coerceNumberToString || opts.coerceScalar || opts.coerceAll)
-					return ok('' + u)
-		}
-		return error('expected string')
+	decode(u: unknown, opts: DecodeContext) {
+		if (typeof u === 'string') return ok(u)
+		return opts.coerceToString ? runCoercer(opts.coerceToString, u) : error('expected string')
 	}
 
-	async validate(v: string, opts: DecoderOpts) {
+	async validate(v: string, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: string, opts: DecoderOpts): Result<string, RTError> {
+	validateSync(v: string, opts: DecodeContext): Result<string, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 
@@ -119,25 +113,17 @@ export class NumberType extends Type<number> {
 		return 'number'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
-		switch (typeof u) {
-			case 'number':
-				if (opts.acceptNaN || !Number.isNaN(u)) {
-					return ok(u)
-				} else break
-			case 'string':
-				if (opts.coerceStringToNumber || opts.coerceScalar || opts.coerceAll) {
-					if (opts.acceptNaN || !Number.isNaN(+u)) return ok(+u)
-				}
-		}
-		return error('expected number')
+	decode(u: unknown, opts: DecodeContext) {
+		if (typeof u === 'number')
+			return opts.acceptNaN || !Number.isNaN(u) ? ok(u) : error('expected number')
+		return opts.coerceToNumber ? runCoercer(opts.coerceToNumber, u) : error('expected number')
 	}
 
-	async validate(v: number, opts: DecoderOpts) {
+	async validate(v: number, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: number, opts: DecoderOpts): Result<number, RTError> {
+	validateSync(v: number, opts: DecodeContext): Result<number, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 
@@ -183,10 +169,15 @@ export class IntegerType extends NumberType {
 		return 'integer'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
-		const num = number.decode(u, opts)
-		if (isOk(num) && Number.isInteger(num.ok)) return num
-		else return error('expected integer')
+	decode(u: unknown, opts: DecodeContext) {
+		// Number.isInteger() is false for a non-number, so the no-hook and wrong-type cases
+		// need no branch of their own - and NaN fails it whatever acceptNaN says.
+		if (typeof u !== 'number' && opts.coerceToNumber) {
+			const num = runCoercer(opts.coerceToNumber, u)
+			if (isErr(num)) return num
+			u = num.ok
+		}
+		return Number.isInteger(u) ? ok(u as number) : error('expected integer')
 	}
 }
 export const integer = new IntegerType()
@@ -199,29 +190,18 @@ export class BooleanType extends Type<boolean> {
 		return 'boolean'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
-		switch (typeof u) {
-			case 'boolean':
-				return ok(u)
-			case 'number':
-				if (opts.coerceNumberToBoolean || opts.coerceScalar || opts.coerceAll)
-					return ok(!!u)
-			case 'string':
-				if (
-					(opts.coerceStringToNumber && opts.coerceNumberToBoolean) ||
-					opts.coerceScalar ||
-					opts.coerceAll
-				)
-					return ok(Number.isFinite(+u) ? !!+u : !!u)
-		}
-		return error('expected boolean')
+	decode(u: unknown, opts: DecodeContext) {
+		if (typeof u === 'boolean') return ok(u)
+		return opts.coerceToBoolean
+			? runCoercer(opts.coerceToBoolean, u)
+			: error('expected boolean')
 	}
 
-	async validate(v: boolean, opts: DecoderOpts) {
+	async validate(v: boolean, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: boolean, opts: DecoderOpts): Result<boolean, RTError> {
+	validateSync(v: boolean, opts: DecodeContext): Result<boolean, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 
@@ -242,32 +222,16 @@ export class DateType extends Type<Date> {
 		return 'Date'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
-		let date: Date | undefined
-
-		switch (typeof u) {
-			case 'object':
-				if (u instanceof Date && !Number.isNaN(u.valueOf())) return ok(u)
-				break
-			case 'string':
-				if (opts.coerceStringToDate || opts.coerceDate || opts.coerceAll) date = new Date(u)
-				break
-			case 'number':
-				if (opts.coerceNumberToDate || opts.coerceDate || opts.coerceAll) date = new Date(u)
-				break
-		}
-		if (date !== undefined && !Number.isNaN(date.valueOf())) {
-			return ok(date)
-		} else {
-			return error('expected date')
-		}
+	decode(u: unknown, opts: DecodeContext) {
+		if (u instanceof Date) return Number.isNaN(u.valueOf()) ? error('expected date') : ok(u)
+		return opts.coerceToDate ? runCoercer(opts.coerceToDate, u) : error('expected date')
 	}
 
-	async validate(v: Date, opts: DecoderOpts) {
+	async validate(v: Date, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: Date, opts: DecoderOpts): Result<Date, RTError> {
+	validateSync(v: Date, opts: DecodeContext): Result<Date, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -282,17 +246,17 @@ export class AnyType extends Type<any> {
 	}
 
 	// biome-ignore lint/suspicious/noExplicitAny: yields `any` by definition
-	decode(u: unknown, _opts: DecoderOpts): Result<any, RTError> {
+	decode(u: unknown, _opts: DecodeContext): Result<any, RTError> {
 		return ok(u)
 	}
 
 	// biome-ignore lint/suspicious/noExplicitAny: accepts any value by definition
-	async validate(v: any, opts: DecoderOpts): Promise<Result<any, RTError>> {
+	async validate(v: any, opts: DecodeContext): Promise<Result<any, RTError>> {
 		return this.validateBase(v, opts)
 	}
 
 	// biome-ignore lint/suspicious/noExplicitAny: accepts any value by definition
-	validateSync(v: any, opts: DecoderOpts): Result<any, RTError> {
+	validateSync(v: any, opts: DecodeContext): Result<any, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -305,15 +269,15 @@ export class UnknownType extends Type<unknown> {
 		return 'unknown'
 	}
 
-	decode(u: unknown, _opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecodeContext) {
 		return ok(u)
 	}
 
-	async validate(v: unknown, opts: DecoderOpts) {
+	async validate(v: unknown, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: unknown, opts: DecoderOpts): Result<unknown, RTError> {
+	validateSync(v: unknown, opts: DecodeContext): Result<unknown, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -326,15 +290,15 @@ export class DefinedType extends Type<{}> {
 		return '{}'
 	}
 
-	decode(u: unknown, _opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecodeContext) {
 		return u != null ? ok(u as {}) : error('expected defined value')
 	}
 
-	async validate(v: {}, opts: DecoderOpts) {
+	async validate(v: {}, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: {}, opts: DecoderOpts): Result<{}, RTError> {
+	validateSync(v: {}, opts: DecodeContext): Result<{}, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -347,15 +311,15 @@ export class UnknownObjectType extends Type<object> {
 		return 'object'
 	}
 
-	decode(u: unknown, _opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecodeContext) {
 		return typeof u === 'object' && u !== null ? ok(u as object) : error('expected object')
 	}
 
-	async validate(v: object, opts: DecoderOpts) {
+	async validate(v: object, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: object, opts: DecoderOpts): Result<object, RTError> {
+	validateSync(v: object, opts: DecodeContext): Result<object, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -368,38 +332,16 @@ export class BigIntType extends Type<bigint> {
 		return 'bigint'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
-		switch (typeof u) {
-			case 'bigint':
-				return ok(u)
-			case 'string':
-				if (opts.coerceStringToBigInt || opts.coerceBigInt || opts.coerceAll) {
-					try {
-						return ok(BigInt(u))
-					} catch {
-						break
-					}
-				}
-				break
-			case 'number':
-				if (opts.coerceNumberToBigInt || opts.coerceBigInt || opts.coerceAll) {
-					if (Number.isInteger(u)) {
-						try {
-							return ok(BigInt(u))
-						} catch {
-							break
-						}
-					}
-				}
-		}
-		return error('expected bigint')
+	decode(u: unknown, opts: DecodeContext) {
+		if (typeof u === 'bigint') return ok(u)
+		return opts.coerceToBigInt ? runCoercer(opts.coerceToBigInt, u) : error('expected bigint')
 	}
 
-	async validate(v: bigint, opts: DecoderOpts) {
+	async validate(v: bigint, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: bigint, opts: DecoderOpts): Result<bigint, RTError> {
+	validateSync(v: bigint, opts: DecodeContext): Result<bigint, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 
@@ -443,15 +385,15 @@ export class SymbolType extends Type<symbol> {
 		return 'symbol'
 	}
 
-	decode(u: unknown, _opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecodeContext) {
 		return typeof u === 'symbol' ? ok(u) : error('expected symbol')
 	}
 
-	async validate(v: symbol, opts: DecoderOpts) {
+	async validate(v: symbol, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: symbol, opts: DecoderOpts): Result<symbol, RTError> {
+	validateSync(v: symbol, opts: DecodeContext): Result<symbol, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -464,15 +406,15 @@ export class VoidType extends Type<void> {
 		return 'void'
 	}
 
-	decode(u: unknown, _opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecodeContext) {
 		return u === undefined ? ok(undefined) : error('expected undefined')
 	}
 
-	async validate(v: undefined, opts: DecoderOpts) {
+	async validate(v: undefined, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: undefined, opts: DecoderOpts): Result<void, RTError> {
+	validateSync(v: undefined, opts: DecodeContext): Result<void, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 }
@@ -485,15 +427,15 @@ export class NeverType extends Type<never> {
 		return 'never'
 	}
 
-	decode(_u: unknown, _opts: DecoderOpts): Result<never, RTError> {
+	decode(_u: unknown, _opts: DecodeContext): Result<never, RTError> {
 		return error('never type cannot be satisfied')
 	}
 
-	async validate(_v: never, _opts: DecoderOpts): Promise<Result<never, RTError>> {
+	async validate(_v: never, _opts: DecodeContext): Promise<Result<never, RTError>> {
 		return error('never type cannot be satisfied')
 	}
 
-	validateSync(_v: never, _opts: DecoderOpts): Result<never, RTError> {
+	validateSync(_v: never, _opts: DecodeContext): Result<never, RTError> {
 		return error('never type cannot be satisfied')
 	}
 }
@@ -519,17 +461,17 @@ export class LiteralType<T extends ReadonlyArray<Scalar>> extends Type<T[number]
 		return this.values.map((v) => JSON.stringify(v)).join(' | ')
 	}
 
-	decode(u: unknown, _opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecodeContext) {
 		if (!isScalar(u) || !this.values.includes(u))
 			return error(`expected ${this.values.map((v) => JSON.stringify(v)).join(' | ')}`)
 		return ok(u as T[number])
 	}
 
-	async validate(v: T[number], opts: DecoderOpts) {
+	async validate(v: T[number], opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: T[number], opts: DecoderOpts): Result<T[number], RTError> {
+	validateSync(v: T[number], opts: DecodeContext): Result<T[number], RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 

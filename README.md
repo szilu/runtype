@@ -358,6 +358,63 @@ T.decode(T.number, '42', { coerceStringToNumber: true })
 | `acceptNaN` | `boolean` | Make `T.number` accept NaN as a valid number |
 | `unknownFields` | `'reject' \| 'drop' \| 'discard'` | How to handle unknown fields in structs: *reject* (error, default), *drop* (remove from output), *discard* (keep in output) |
 
+### Custom Coercion
+
+The flags above select the built-in coercion rules. When you need a rule the library does not
+have - or one it deliberately refuses to guess - supply your own function instead:
+
+```typescript
+export type Coercer<T> = (value: unknown) => Result<T, RTError>
+```
+
+| Option | Type | Target |
+|--------|------|--------|
+| `coerceToString` | `Coercer<string>` | `T.string` |
+| `coerceToNumber` | `Coercer<number>` | `T.number`, `T.integer` |
+| `coerceToBoolean` | `Coercer<boolean>` | `T.boolean` |
+| `coerceToDate` | `Coercer<Date>` | `T.date` |
+| `coerceToBigInt` | `Coercer<bigint>` | `T.bigint` |
+| `coerceToArray` | `(value: unknown) => unknown` | `T.array()` (a pre-transform, not a `Coercer`) |
+
+The obvious example is string-to-boolean. `'false'` is a non-empty string, so whether it means
+`false` depends entirely on the wire format you are decoding (XSD, a query string, a CSV, a form
+post) - which is why it is yours to say and not a built-in rule:
+
+```typescript
+const xsdBoolean: T.Coercer<boolean> = (v) => {
+    if (typeof v !== 'string') return T.error('expected boolean')
+    const s = v.toLowerCase()
+    return s === 'true' || s === '1' ? T.ok(true)
+        : s === 'false' || s === '0' ? T.ok(false)
+        : T.error('expected boolean')
+}
+
+T.decode(T.struct({ active: T.boolean }), { active: 'false' }, { coerceToBoolean: xsdBoolean })
+// = { ok: { active: false } }
+```
+
+Rules:
+
+ * A slot is only consulted for a value that is **not already of the target type**, so a hook
+   never has to handle the identity case.
+ * An explicitly supplied slot **wins over the flags** for its target type.
+ * Returning a `Result` lets a hook report its own error message, prefixed with the field path
+   like any other decoding error.
+ * A hook that throws is reported as a `coercer threw: ...` error rather than escaping `decode()`.
+ * `acceptNaN` gates the *built-in* coercions only. A hook returning `ok(NaN)`, or an invalid
+   `Date`, is trusted.
+ * Hooks never see `undefined` / `null` inside `optional()` / `nullable()` - those short-circuit
+   before delegating, the same rule that already applies to `coerceToArray`.
+ * A coercer's error is reported as-is wherever a coercer runs. So `T.integer` says
+   `expected number` when the value cannot be coerced to a number at all, and `expected integer`
+   only when a number was produced but is not whole.
+
+The boolean flags are resolved into these functions by `T.decode()` / `T.validate()` /
+`T.validateSync()`. `DecoderOpts` is the entry-point type - flags and slots; `DecodeContext` is
+what a `Type.decode()` receives - slots only, so `type.decode(value, { coerceAll: true })` is a
+compile error rather than a silent no-op. To call a `decode()` directly, resolve by hand with
+`type.decode(value, T.resolveContext(opts))`.
+
 Validation
 ----------
 
@@ -499,6 +556,8 @@ Both modifiers are copy-on-write: they return a new type and leave the original 
  * The schema system (`T.schema()`, `T.schemaStrict()`, `T.schemaPartial()`, `T.schemaPatch()`, `T.schemaPost()`, `T.schemaPostPartial()`, `T.schemaKeys()`, `T.describeSchema()`) has been removed. Use `T.struct()` with `T.partial()` / `T.patch()` / `T.pick()` / `T.omit()`.
  * The legacy validator API (`T.validateOrig()` and the `ValidatorBase` / `NumberValidator` / `StringValidator` / `BooleanValidator` / `DateValidator` classes) has been removed. Use `addValidator()` / `addAsyncValidator()` on the types themselves.
  * Custom `Type` subclasses have to implement the new `validateSync()` method.
+ * The coercion boolean flags are resolved into `coerceToString` / `coerceToNumber` / `coerceToBoolean` / `coerceToDate` / `coerceToBigInt` functions by `T.decode()` / `T.validate()` / `T.validateSync()`. `DecoderOpts` now covers only those entry points; `Type.decode()` / `validate()` / `validateSync()` take the new `DecodeContext` (the same fields minus the flags), so passing a flag to a `decode()` directly is a compile error - use an entry point or `T.resolveContext(opts)`. A custom `Type` subclass compiles unchanged. The `Coercers` type is gone and `resolveCoercers()` is now `resolveContext()`, returning a ready `DecodeContext`. See *Custom Coercion*.
+ * `T.integer` no longer replaces a coercer's error with `expected integer`: a value that cannot be coerced to a number at all now reports the coercer's own message (`expected number` for the built-ins).
  * `T.unknownObject` is typed `object` instead of `{}`. It still rejects functions at runtime, although they are assignable to `object`.
  * `default()` / `withDefault()` reject object, array and `Date` defaults, frozen ones included: for an object type only the factory form type-checks, with a runtime `TypeError` as a backstop for `T.unknown` / `T.any`. Use `.default(() => ({ ... }))`. The default value is also decoded by the inner type now.
  * `deepPartial()` / `deepPatch()` recurse into `record()`, `union()`, `taggedUnion()`, `intersection()` and `lazy()` fields, and the inferred type follows: a mixed `union()` field like `T.union(tInner, T.number)` now infers as `DeepPartial<Inner> | number` instead of `Inner | number`. Every field becomes optional, literal-valued ones included, and a `taggedUnion()` field is rewritten as a plain `union()` of the deep-partialled members.

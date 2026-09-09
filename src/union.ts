@@ -1,4 +1,4 @@
-import { copyValidators, type DecoderOpts, type RTError, Type } from './type.js'
+import { copyValidators, type DecodeContext, type RTError, Type } from './type.js'
 import { err, isOk, type Result } from './utils.js'
 
 type ElementType<T extends ReadonlyArray<unknown>> =
@@ -37,7 +37,7 @@ export class UnionType<T extends ReadonlyArray<unknown>> extends Type<ElementTyp
 		return this.members.map((member) => member.print()).join(' | ')
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<ElementType<T>, RTError> {
+	decode(u: unknown, opts: DecodeContext): Result<ElementType<T>, RTError> {
 		const candidates: { i: number; err: RTError }[] = []
 		for (let i = 0; i < this.members.length; i++) {
 			const matched = this.members[i].decode(u, opts)
@@ -47,7 +47,10 @@ export class UnionType<T extends ReadonlyArray<unknown>> extends Type<ElementTyp
 		return err(bestErrors(candidates))
 	}
 
-	async validate(v: ElementType<T>, opts: DecoderOpts): Promise<Result<ElementType<T>, RTError>> {
+	async validate(
+		v: ElementType<T>,
+		opts: DecodeContext
+	): Promise<Result<ElementType<T>, RTError>> {
 		const candidates: { i: number; err: RTError }[] = []
 
 		for (let i = 0; i < this.members.length; i++) {
@@ -61,7 +64,7 @@ export class UnionType<T extends ReadonlyArray<unknown>> extends Type<ElementTyp
 		return err(bestErrors(candidates))
 	}
 
-	validateSync(v: ElementType<T>, opts: DecoderOpts): Result<ElementType<T>, RTError> {
+	validateSync(v: ElementType<T>, opts: DecodeContext): Result<ElementType<T>, RTError> {
 		this.checkSync()
 		const candidates: { i: number; err: RTError }[] = []
 

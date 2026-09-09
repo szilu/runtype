@@ -1,4 +1,4 @@
-import { copyValidators, type DecoderOpts, type RTError, Type } from './type.js'
+import { copyValidators, type DecodeContext, type RTError, Type } from './type.js'
 import { isErr, type Result } from './utils.js'
 
 // Lazy //
@@ -25,18 +25,18 @@ export class LazyType<T> extends Type<T> {
 		}
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<T, RTError> {
+	decode(u: unknown, opts: DecodeContext): Result<T, RTError> {
 		if (!this.type) this.type = this.def()
 		return this.type.decode(u, opts)
 	}
 
-	async validate(v: T, opts: DecoderOpts): Promise<Result<T, RTError>> {
+	async validate(v: T, opts: DecodeContext): Promise<Result<T, RTError>> {
 		if (!this.type) this.type = this.def()
 		const res = await this.type.validate(v, opts)
 		return isErr(res) ? res : this.validateBase(v, opts)
 	}
 
-	validateSync(v: T, opts: DecoderOpts): Result<T, RTError> {
+	validateSync(v: T, opts: DecodeContext): Result<T, RTError> {
 		this.checkSync()
 		if (!this.type) this.type = this.def()
 		const res = this.type.validateSync(v, opts)

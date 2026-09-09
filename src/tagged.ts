@@ -1,4 +1,4 @@
-import { copyValidators, type DecoderOpts, error, type RTError, Type } from './type.js'
+import { copyValidators, type DecodeContext, error, type RTError, Type } from './type.js'
 import { union } from './union.js'
 import { isErr, type Result } from './utils.js'
 
@@ -36,7 +36,7 @@ export class TaggedUnionType<A, T extends string> extends Type<A[keyof A]> {
 			: `invalid tag (${this.tag})`
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<A[keyof A], RTError> {
+	decode(u: unknown, opts: DecodeContext): Result<A[keyof A], RTError> {
 		if (typeof u !== 'object' || u === null || Array.isArray(u)) {
 			return error('expected object')
 		}
@@ -51,7 +51,7 @@ export class TaggedUnionType<A, T extends string> extends Type<A[keyof A]> {
 		return member.decode(u, opts)
 	}
 
-	async validate(v: A[keyof A], opts: DecoderOpts): Promise<Result<A[keyof A], RTError>> {
+	async validate(v: A[keyof A], opts: DecodeContext): Promise<Result<A[keyof A], RTError>> {
 		const tag = (v as { [K in T]?: unknown } | null | undefined)?.[this.tag]
 		const member = this.resolveMember(tag)
 		if (!member) return error(this.unknownTagError(tag))
@@ -59,7 +59,7 @@ export class TaggedUnionType<A, T extends string> extends Type<A[keyof A]> {
 		return isErr(res) ? res : this.validateBase(v, opts)
 	}
 
-	validateSync(v: A[keyof A], opts: DecoderOpts): Result<A[keyof A], RTError> {
+	validateSync(v: A[keyof A], opts: DecodeContext): Result<A[keyof A], RTError> {
 		this.checkSync()
 		const tag = (v as { [K in T]?: unknown } | null | undefined)?.[this.tag]
 		const member = this.resolveMember(tag)

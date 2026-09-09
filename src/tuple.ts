@@ -1,4 +1,4 @@
-import { type DecoderOpts, error, type RTError, Type } from './type.js'
+import { type DecodeContext, error, type RTError, Type } from './type.js'
 import { err, isErr, isOk, ok, type Result } from './utils.js'
 
 // Tuple //
@@ -15,7 +15,7 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 		return '[' + this.memberTypes.map((member) => member.print()).join(', ') + ']'
 	}
 
-	decode(u: unknown, opts: DecoderOpts) {
+	decode(u: unknown, opts: DecodeContext) {
 		const ret: { -readonly [K in number]?: A[K] } = []
 		const errors: RTError = []
 
@@ -43,7 +43,7 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 		return ok(ret as A)
 	}
 
-	async validate(v: A, opts: DecoderOpts) {
+	async validate(v: A, opts: DecodeContext) {
 		const errors: RTError = []
 		for (let i = 0; i < v.length; i++) {
 			const res = await this.memberTypes[i].validate(v[i], opts)
@@ -60,7 +60,7 @@ class TupleType<A extends ReadonlyArray<unknown>> extends Type<A> {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: A, opts: DecoderOpts): Result<A, RTError> {
+	validateSync(v: A, opts: DecodeContext): Result<A, RTError> {
 		this.checkSync()
 		const errors: RTError = []
 		for (let i = 0; i < v.length; i++) {

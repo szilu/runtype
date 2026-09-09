@@ -46,6 +46,22 @@ describe('test array type', () => {
 		).toBeErr()
 	})
 
+	it('should combine coerceToArray with a coerceToNumber hook', () => {
+		expect(
+			t.decode(tArray, '1,2,42', {
+				coerceToArray: (x: unknown) => (typeof x === 'string' ? x.split(',') : x),
+				coerceToNumber: (v: unknown) =>
+					typeof v === 'string' ? t.ok(+v) : t.error('expected number')
+			})
+		).toEqual(t.ok([1, 2, 42]))
+	})
+
+	it('should not call coerceToArray for an array input', () => {
+		const fn = jest.fn((x: unknown) => x)
+		expect(t.decode(tArray, [1, 2, 42], { coerceToArray: fn })).toEqual(t.ok([1, 2, 42]))
+		expect(fn).not.toHaveBeenCalled()
+	})
+
 	it('should print array type', () => {
 		expect(tArray.print()).toBe('number[]')
 	})

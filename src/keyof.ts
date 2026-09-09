@@ -1,5 +1,5 @@
 import type { StructType } from './struct.js'
-import { type DecoderOpts, error, type RTError, Type } from './type.js'
+import { type DecodeContext, error, type RTError, Type } from './type.js'
 import { ok, type Result } from './utils.js'
 
 // KeyOf //
@@ -18,7 +18,7 @@ export class KeyOfType<T extends { [K: string]: unknown }> extends Type<keyof T>
 			.join(' | ')
 	}
 
-	decode(u: unknown, _opts: DecoderOpts) {
+	decode(u: unknown, _opts: DecodeContext) {
 		if (typeof u != 'string' || !Object.hasOwn(this.struct.props, u))
 			return error(
 				`expected ${Object.keys(this.struct.props)
@@ -28,11 +28,11 @@ export class KeyOfType<T extends { [K: string]: unknown }> extends Type<keyof T>
 		return ok(u as keyof T)
 	}
 
-	async validate(v: keyof T, opts: DecoderOpts) {
+	async validate(v: keyof T, opts: DecodeContext) {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: keyof T, opts: DecoderOpts): Result<keyof T, RTError> {
+	validateSync(v: keyof T, opts: DecodeContext): Result<keyof T, RTError> {
 		return this.validateBaseSync(v, opts)
 	}
 

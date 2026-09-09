@@ -1,4 +1,4 @@
-import { copyValidators, type DecoderOpts, error, type RTError, Type } from './type.js'
+import { copyValidators, type DecodeContext, error, type RTError, Type } from './type.js'
 import { err, isErr, isOk, ok, type Result } from './utils.js'
 
 // Record //
@@ -16,7 +16,7 @@ export class RecordType<T> extends Type<Record<string, T>> {
 		return `Record<string, ${!/[|&()]/.test(member) ? member : '(' + member + ')'}>`
 	}
 
-	decode(u: unknown, opts: DecoderOpts): Result<Record<string, T>, RTError> {
+	decode(u: unknown, opts: DecodeContext): Result<Record<string, T>, RTError> {
 		const ret: Record<string, T> = {}
 		const errors: RTError = []
 
@@ -45,7 +45,7 @@ export class RecordType<T> extends Type<Record<string, T>> {
 
 	async validate(
 		v: Record<string, T>,
-		opts: DecoderOpts
+		opts: DecodeContext
 	): Promise<Result<Record<string, T>, RTError>> {
 		const errors: RTError = []
 
@@ -65,7 +65,7 @@ export class RecordType<T> extends Type<Record<string, T>> {
 		return this.validateBase(v, opts)
 	}
 
-	validateSync(v: Record<string, T>, opts: DecoderOpts): Result<Record<string, T>, RTError> {
+	validateSync(v: Record<string, T>, opts: DecodeContext): Result<Record<string, T>, RTError> {
 		this.checkSync()
 		const errors: RTError = []
 
